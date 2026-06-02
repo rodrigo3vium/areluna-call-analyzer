@@ -10,8 +10,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             <Activity className="h-4 w-4" aria-hidden />
           </div>
           <div className="flex flex-col leading-tight">
-            <span className="text-sm font-semibold tracking-tight">Atlas OS</span>
-            <span className="text-xs text-muted-foreground">Comercial</span>
+            <span className="text-sm font-semibold tracking-tight">Areluna</span>
+            <span className="text-xs text-muted-foreground">Call Analyzer</span>
           </div>
         </div>
         <SidebarNav />

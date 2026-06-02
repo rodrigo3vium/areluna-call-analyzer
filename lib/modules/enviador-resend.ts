@@ -29,7 +29,7 @@ export async function enviarRonda(
   for (let tentativa = 1; tentativa <= MAX_TENTATIVAS; tentativa++) {
     try {
       await getResend().emails.send({
-        from: `${nomeCli} — Atlas OS <noreply@benitesalbuquerque.com.br>`,
+        from: `${nomeCli} — Areluna <noreply@benitesalbuquerque.com.br>`,
         to: destinatarios,
         subject: assunto,
         html,

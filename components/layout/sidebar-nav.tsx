@@ -2,15 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import {
-  LayoutDashboard,
-  MessageSquare,
-  Phone,
-  Users,
-  Inbox,
-  ScrollText,
-  Settings,
-} from "lucide-react";
+import { LayoutDashboard, Phone, Users, ScrollText, Settings } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 type NavItem = {
@@ -21,10 +13,8 @@ type NavItem = {
 
 const NAV_ITEMS: NavItem[] = [
   { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-  { label: "WhatsApp", href: "/whatsapp", icon: MessageSquare },
   { label: "Calls", href: "/calls", icon: Phone },
-  { label: "Leads", href: "/leads", icon: Users },
-  { label: "Pendentes", href: "/leads/pendentes", icon: Inbox },
+  { label: "Closers", href: "/closers", icon: Users },
   { label: "Rondas", href: "/rondas", icon: ScrollText },
   { label: "Configurações", href: "/configuracoes", icon: Settings },
 ];

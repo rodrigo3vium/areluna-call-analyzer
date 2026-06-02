@@ -12,19 +12,7 @@ export function getTestClient(): SupabaseClient {
   });
 }
 
-const TABLES_TO_CLEAN = [
-  "auditoria",
-  "lead_eventos",
-  "analises_calls",
-  "analises_whatsapp",
-  "rondas",
-  "eventos_brutos",
-  "mensagens",
-  "calls",
-  "conversas",
-  "leads",
-  "evolution_instances",
-] as const;
+const TABLES_TO_CLEAN = ["auditoria", "rondas", "calls", "closers"] as const;
 
 export async function limparDb(supabase: SupabaseClient) {
   for (const table of TABLES_TO_CLEAN) {

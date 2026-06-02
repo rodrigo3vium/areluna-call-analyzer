@@ -1,12 +1,12 @@
 {
   "crons": [
     {
-      "path": "/api/cron/processar-eventos",
-      "schedule": "* * * * *"
+      "path": "/api/cron/sync-sharepoint",
+      "schedule": "*/15 * * * *"
     },
     {
-      "path": "/api/cron/analise-whatsapp",
-      "schedule": "*/30 * * * *"
+      "path": "/api/cron/transcrever-calls",
+      "schedule": "*/5 * * * *"
     },
     {
       "path": "/api/cron/analise-calls",
@@ -19,14 +19,6 @@
     {
       "path": "/api/cron/backfill-rondas",
       "schedule": "5 9 * * 2-7"
-    },
-    {
-      "path": "/api/cron/classify-origin-stale",
-      "schedule": "0 6 * * *"
-    },
-    {
-      "path": "/api/cron/recompute-stale-leads",
-      "schedule": "30 6 * * *"
     }
   ]
 }

@@ -6,7 +6,7 @@ export function normalizar(raw: string, country: CountryCode = "BR"): string | n
   // Groups (@g.us) não são contatos individuais — ignorar
   if (raw.includes("@g.us")) return null;
 
-  // Strip Evolution JID suffix (e.g., 5511999999999@s.whatsapp.net)
+  // Strip JID suffix if present (e.g., 5511999999999@domain)
   const withoutJid = raw.split("@")[0];
 
   const startsWithPlus = withoutJid.trimStart().startsWith("+");
@@ -19,7 +19,7 @@ export function normalizar(raw: string, country: CountryCode = "BR"): string | n
     // fall through
   }
 
-  // Attempt 2: prepend + to raw digits (handles 5511... Evolution format sem +)
+  // Attempt 2: prepend + to raw digits (handles 5511... format without leading +)
   if (!startsWithPlus) {
     const digitsOnly = withoutJid.replace(/\D/g, "");
     if (digitsOnly) {

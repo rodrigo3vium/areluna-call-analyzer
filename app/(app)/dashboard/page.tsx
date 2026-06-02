@@ -21,35 +21,28 @@ function scoreBadgeVariant(score: number | null): "default" | "secondary" | "des
 
 type DashboardData = {
   kpis: {
-    leads_ativos: number;
-    score_medio_whatsapp: number | null;
+    calls_no_periodo: number;
+    calls_analisadas: number;
+    calls_aguardando: number;
     score_medio_calls: number | null;
-    taxa_fechamento: number | null;
-    delta_score_whatsapp: number | null;
     delta_score_calls: number | null;
   };
   serie_temporal: Array<{
     semana: string;
-    score_whatsapp: number | null;
     score_calls: number | null;
-  }>;
-  conversas_recentes: Array<{
-    id: string;
-    lead_nome: string | null;
-    lead_telefone: string;
-    ultimo_score: number | null;
-    ultima_mensagem_em: string;
-    ultimo_resumo: string | null;
-    tags_negativas: string[];
   }>;
   calls_recentes: Array<{
     id: string;
-    titulo: string | null;
-    lead_nome: string | null;
-    realizada_em: string | null;
-    match_status: string;
+    closer_nome: string | null;
     classificacao: string | null;
-    score_geral: number | null;
+    score: number | null;
+    data_gravacao: string | null;
+  }>;
+  por_closer: Array<{
+    closer_id: string;
+    closer_nome: string;
+    total: number;
+    score_medio: number | null;
   }>;
 };
 
@@ -63,89 +56,44 @@ async function DashboardConteudo({ dias }: { dias: number }) {
 
   const d = (data as DashboardData | null) ?? {
     kpis: {
-      leads_ativos: 0,
-      score_medio_whatsapp: null,
+      calls_no_periodo: 0,
+      calls_analisadas: 0,
+      calls_aguardando: 0,
       score_medio_calls: null,
-      taxa_fechamento: null,
-      delta_score_whatsapp: null,
       delta_score_calls: null,
     },
     serie_temporal: [],
-    conversas_recentes: [],
     calls_recentes: [],
+    por_closer: [],
   };
 
   return (
     <div className="space-y-6">
       {/* KPIs */}
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-        <KpiCard titulo="Leads ativos" valor={d.kpis.leads_ativos} />
+        <KpiCard titulo="Calls no período" valor={d.kpis.calls_no_periodo} />
+        <KpiCard titulo="Calls analisadas" valor={d.kpis.calls_analisadas} />
+        <KpiCard titulo="Em processamento" valor={d.kpis.calls_aguardando} />
         <KpiCard
-          titulo="Score médio WhatsApp"
-          valor={d.kpis.score_medio_whatsapp}
-          delta={d.kpis.delta_score_whatsapp}
-          sufixo="/100"
-          destaque
-        />
-        <KpiCard
-          titulo="Score médio Calls"
+          titulo="Score médio"
           valor={d.kpis.score_medio_calls}
           delta={d.kpis.delta_score_calls}
           sufixo="/100"
           destaque
         />
-        <KpiCard titulo="Taxa de fechamento" valor={d.kpis.taxa_fechamento} sufixo="%" />
       </div>
 
       {/* Gráfico */}
       {d.serie_temporal.length > 0 && (
         <div className="rounded-xl border border-slate-700 bg-slate-800/40 p-4">
           <h2 className="mb-4 text-sm font-medium text-slate-400">
-            Evolução de scores (12 semanas)
+            Evolução de score (12 semanas)
           </h2>
           <ScoreChart dados={d.serie_temporal} />
         </div>
       )}
 
       <div className="grid gap-6 lg:grid-cols-2">
-        {/* Conversas recentes */}
-        <div className="rounded-xl border border-slate-700 bg-slate-800/40 p-4">
-          <div className="mb-3 flex items-center justify-between">
-            <h2 className="text-sm font-medium text-slate-300">Conversas recentes</h2>
-            <Link href="/whatsapp" className="text-xs text-cyan-400 hover:underline">
-              Ver todas
-            </Link>
-          </div>
-          {d.conversas_recentes.length === 0 ? (
-            <p className="text-sm text-slate-500">Nenhuma conversa no período</p>
-          ) : (
-            <ul className="space-y-2">
-              {d.conversas_recentes.map((c) => (
-                <li key={c.id}>
-                  <Link
-                    href={`/whatsapp/${c.id}`}
-                    className="flex items-center justify-between rounded-lg px-2 py-1.5 hover:bg-slate-700/60"
-                  >
-                    <div className="min-w-0">
-                      <p className="truncate text-sm font-medium text-slate-200">
-                        {c.lead_nome ?? c.lead_telefone}
-                      </p>
-                      {c.ultimo_resumo && (
-                        <p className="truncate text-xs text-slate-500">{c.ultimo_resumo}</p>
-                      )}
-                    </div>
-                    {c.ultimo_score != null && (
-                      <Badge variant={scoreBadgeVariant(c.ultimo_score)} className="ml-2 shrink-0">
-                        {c.ultimo_score}
-                      </Badge>
-                    )}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
-
         {/* Calls recentes */}
         <div className="rounded-xl border border-slate-700 bg-slate-800/40 p-4">
           <div className="mb-3 flex items-center justify-between">
@@ -166,15 +114,47 @@ async function DashboardConteudo({ dias }: { dias: number }) {
                   >
                     <div className="min-w-0">
                       <p className="truncate text-sm font-medium text-slate-200">
-                        {c.lead_nome ?? c.titulo ?? "Call sem título"}
+                        {c.closer_nome ?? "Closer não identificado"}
                       </p>
-                      <p className="text-xs text-slate-500">
-                        {c.classificacao ?? "—"} · {c.match_status}
-                      </p>
+                      <p className="text-xs text-slate-500">{c.classificacao ?? "—"}</p>
                     </div>
-                    {c.score_geral != null && (
-                      <Badge variant={scoreBadgeVariant(c.score_geral)} className="ml-2 shrink-0">
-                        {c.score_geral}
+                    {c.score != null && (
+                      <Badge variant={scoreBadgeVariant(c.score)} className="ml-2 shrink-0">
+                        {c.score}
+                      </Badge>
+                    )}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+
+        {/* Por closer */}
+        <div className="rounded-xl border border-slate-700 bg-slate-800/40 p-4">
+          <div className="mb-3 flex items-center justify-between">
+            <h2 className="text-sm font-medium text-slate-300">Por closer</h2>
+            <Link href="/closers" className="text-xs text-cyan-400 hover:underline">
+              Ver todos
+            </Link>
+          </div>
+          {d.por_closer.length === 0 ? (
+            <p className="text-sm text-slate-500">Nenhum dado no período</p>
+          ) : (
+            <ul className="space-y-2">
+              {d.por_closer.map((c) => (
+                <li key={c.closer_id}>
+                  <Link
+                    href={`/closers/${c.closer_id}`}
+                    className="flex items-center justify-between rounded-lg px-2 py-1.5 hover:bg-slate-700/60"
+                  >
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-medium text-slate-200">{c.closer_nome}</p>
+                      <p className="text-xs text-slate-500">{c.total} calls</p>
+                    </div>
+                    {c.score_medio != null && (
+                      <Badge variant={scoreBadgeVariant(c.score_medio)} className="ml-2 shrink-0">
+                        {c.score_medio}
                       </Badge>
                     )}
                   </Link>
@@ -201,7 +181,7 @@ export default async function DashboardPage({
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-xl font-semibold text-slate-100">Dashboard</h1>
-          <p className="text-sm text-slate-400">Visão consolidada do comercial</p>
+          <p className="text-sm text-slate-400">Visão consolidada das calls de fechamento</p>
         </div>
         <Suspense>
           <PeriodoSelector />

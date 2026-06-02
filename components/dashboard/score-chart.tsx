@@ -7,13 +7,11 @@ import {
   YAxis,
   CartesianGrid,
   Tooltip,
-  Legend,
   ResponsiveContainer,
 } from "recharts";
 
 type SerieSemana = {
   semana: string;
-  score_whatsapp: number | null;
   score_calls: number | null;
 };
 
@@ -29,7 +27,6 @@ function formatarSemana(iso: string) {
 export function ScoreChart({ dados }: Props) {
   const data = dados.map((d) => ({
     semana: formatarSemana(d.semana),
-    WhatsApp: d.score_whatsapp,
     Calls: d.score_calls,
   }));
 
@@ -42,15 +39,6 @@ export function ScoreChart({ dados }: Props) {
         <Tooltip
           contentStyle={{ background: "#1e293b", border: "1px solid #334155", borderRadius: 8 }}
           labelStyle={{ color: "#e2e8f0" }}
-        />
-        <Legend wrapperStyle={{ fontSize: 12, color: "#94a3b8" }} />
-        <Line
-          type="monotone"
-          dataKey="WhatsApp"
-          stroke="#06b6d4"
-          strokeWidth={2}
-          dot={false}
-          connectNulls
         />
         <Line
           type="monotone"

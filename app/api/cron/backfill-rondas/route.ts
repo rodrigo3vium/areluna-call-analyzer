@@ -1,11 +1,12 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createServiceClient } from "@/lib/supabase/server";
 import { gerarRonda, calcularPeriodoSemanaAnterior } from "@/lib/modules/gerador-ronda";
-import { renderizarRondaWhatsapp, renderizarRondaCalls } from "@/lib/modules/email-renderer-ronda";
+import { renderizarRondaCalls } from "@/lib/modules/email-renderer-ronda";
 import { enviarRonda } from "@/lib/modules/enviador-resend";
+import type { SnapshotCalls } from "@/lib/types";
 import { log } from "@/lib/log";
 
-// Regenera rondas com status != 'enviada' da semana anterior (idempotente)
+// Regenera ronda da semana anterior se ainda não foi enviada (idempotente)
 export async function GET(request: NextRequest) {
   const auth = request.headers.get("authorization");
   if (auth !== `Bearer ${process.env.CRON_SECRET}`) {
@@ -17,64 +18,50 @@ export async function GET(request: NextRequest) {
   const { data: config } = await supabase
     .schema("comercial")
     .from("configuracoes")
-    .select("nome_clinica, destinatarios_whatsapp, destinatarios_calls")
+    .select("nome_clinica, destinatarios_calls")
     .eq("id", 1)
     .single();
 
-  const nomeCli = config?.nome_clinica ?? "Clínica";
+  const nomeCli = config?.nome_clinica ?? "Areluna";
   const { inicio, fim } = calcularPeriodoSemanaAnterior();
-  const dataRef = inicio.toLocaleDateString("pt-BR");
 
-  const { data: existentes } = await supabase
+  const { data: existente } = await supabase
     .schema("comercial")
     .from("rondas")
-    .select("id, tipo, status")
+    .select("id, status")
+    .eq("tipo", "calls")
     .gte("periodo_inicio", inicio.toISOString())
-    .lte("periodo_inicio", fim.toISOString());
+    .lte("periodo_inicio", fim.toISOString())
+    .maybeSingle();
 
-  const enviadas = new Set(
-    (existentes ?? []).filter((r) => r.status === "enviada").map((r) => r.tipo),
-  );
-  const tiposParaReprocessar = (["whatsapp", "calls"] as const).filter((t) => !enviadas.has(t));
-
-  if (tiposParaReprocessar.length === 0) {
+  if (existente?.status === "enviada") {
     log.info("cron.backfill_rondas.nada_a_fazer", { inicio: inicio.toISOString() });
-    return NextResponse.json({ ok: true, message: "Todas as rondas já enviadas" });
+    return NextResponse.json({ ok: true, message: "Ronda já enviada" });
   }
 
-  for (const tipo of tiposParaReprocessar) {
-    try {
-      const resultado = await gerarRonda(tipo, inicio, fim, supabase);
-      const { data: snap } = await supabase
-        .schema("comercial")
-        .from("rondas")
-        .select("snapshot")
-        .eq("id", resultado.rondaId)
-        .single();
+  try {
+    const resultado = await gerarRonda(inicio, fim, supabase);
+    const { data: snap } = await supabase
+      .schema("comercial")
+      .from("rondas")
+      .select("snapshot")
+      .eq("id", resultado.rondaId)
+      .single();
 
-      const destinatarios =
-        tipo === "whatsapp"
-          ? (config?.destinatarios_whatsapp ?? [])
-          : (config?.destinatarios_calls ?? []);
-
-      const html =
-        tipo === "whatsapp"
-          ? renderizarRondaWhatsapp(snap!.snapshot, nomeCli)
-          : renderizarRondaCalls(snap!.snapshot, nomeCli);
-
-      const assunto =
-        tipo === "whatsapp"
-          ? `Ronda WhatsApp — ${nomeCli} (${dataRef}) [reenvio]`
-          : `Ronda Calls — ${nomeCli} (${dataRef}) [reenvio]`;
-
-      await enviarRonda(resultado.rondaId, assunto, html, destinatarios, nomeCli, supabase);
-    } catch (err) {
-      log.error("cron.backfill_rondas.erro", {
-        tipo,
-        erro: err instanceof Error ? err.message : String(err),
-      });
-    }
+    await enviarRonda(
+      resultado.rondaId,
+      `Ronda Calls — ${nomeCli} (${inicio.toLocaleDateString("pt-BR")}) [reenvio]`,
+      renderizarRondaCalls(snap!.snapshot as unknown as SnapshotCalls, nomeCli),
+      config?.destinatarios_calls ?? [],
+      nomeCli,
+      supabase,
+    );
+  } catch (err) {
+    log.error("cron.backfill_rondas.erro", {
+      erro: err instanceof Error ? err.message : String(err),
+    });
+    return NextResponse.json({ ok: false, error: String(err) }, { status: 500 });
   }
 
-  return NextResponse.json({ ok: true, reprocessados: tiposParaReprocessar });
+  return NextResponse.json({ ok: true });
 }

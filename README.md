@@ -60,7 +60,7 @@ Sistema de inteligência comercial para clínicas médicas brasileiras. Captura 
 - Node.js ≥ 20
 - Supabase CLI (`npm i -g supabase`)
 - Docker (para testes de integração com Supabase local)
-- Contas: Supabase, Vercel, Resend, Anthropic, OpenAI, Sentry, Evolution API
+- Contas: Supabase, Vercel, Resend, Anthropic, OpenAI, Sentry, Microsoft Azure (App Registration)
 
 ---
 
@@ -91,9 +91,13 @@ cp .env.example .env.local
 | `RESEND_API_KEY` | Chave da API Resend |
 | `ANTHROPIC_API_KEY` | Chave Anthropic para análise via Claude |
 | `OPENAI_API_KEY` | Chave OpenAI para transcrição Whisper |
-| `EVOLUTION_WEBHOOK_SECRET` | Secret para validar webhooks da Evolution |
-| `ZAPIER_WEBHOOK_SECRET` | Secret para validar webhooks do Zapier/Plaud |
 | `CRON_SECRET` | Bearer token para proteger rotas de cron |
+| `SHAREPOINT_TENANT_ID` | Tenant ID do Azure (App Registration) |
+| `SHAREPOINT_CLIENT_ID` | Client ID do Azure |
+| `SHAREPOINT_CLIENT_SECRET` | Client Secret do Azure |
+| `SHAREPOINT_SITE_ID` | Resolvido via `tsx scripts/resolve-sharepoint-ids.ts` |
+| `SHAREPOINT_DRIVE_ID` | Idem |
+| `SHAREPOINT_FOLDER_ITEM_ID` | Idem |
 | `SENTRY_DSN` | DSN do Sentry (opcional em dev) |
 | `SENTRY_ORG` | Organização no Sentry |
 | `SENTRY_PROJECT` | Projeto no Sentry |
@@ -130,7 +134,26 @@ npm run admin:create-user -- --email ba@benitesalbuquerque.com.br --role admin
 
 Cada usuário recebe um link de recovery por email para definir a própria senha.
 
-### 5. Rodar em desenvolvimento
+### 5. Setup SharePoint (1x por cliente)
+
+1. Cliente cria App Registration no Azure (ver doc Notion) com permissões:
+   - `Sites.Read.All` (application permission)
+   - `Files.Read.All` (application permission)
+   - Admin consent concedido pelo admin do tenant
+2. Coloca Tenant ID, Client ID e Client Secret no `.env.local`
+3. Resolve os IDs da pasta:
+
+```bash
+tsx scripts/resolve-sharepoint-ids.ts "<URL_DA_PASTA_SHAREPOINT>"
+```
+
+4. Cola os 3 IDs gerados (`SHAREPOINT_SITE_ID`, `SHAREPOINT_DRIVE_ID`, `SHAREPOINT_FOLDER_ITEM_ID`) no `.env.local` e nas env vars do Vercel
+5. Pronto — cron `sync-sharepoint` detecta arquivos novos a cada 15min
+
+**Padrão de nome de arquivo:** `YYYY-MM-DD_NomeCloser_NomeCliente.ext`  
+Exemplo: `2026-06-01_Joao-Silva_Maria-Joao-Pereira.mp4`
+
+### 6. Rodar em desenvolvimento
 
 ```bash
 npm run dev

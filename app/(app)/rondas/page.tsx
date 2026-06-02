@@ -9,64 +9,21 @@ const STATUS_COR: Record<string, string> = {
   erro: "bg-red-500/20 text-red-300",
 };
 
-export default async function RondasPage({
-  searchParams,
-}: {
-  searchParams: Promise<{ tipo?: string }>;
-}) {
-  const { tipo } = await searchParams;
+export default async function RondasPage() {
   const supabase = await createServiceClient();
 
-  let query = supabase
+  const { data: rondas } = await supabase
     .schema("comercial")
     .from("rondas")
     .select("id, tipo, periodo_inicio, periodo_fim, status, enviada_em, vazia, erro_envio")
     .order("periodo_inicio", { ascending: false })
     .limit(60);
 
-  if (tipo === "whatsapp" || tipo === "calls") {
-    query = query.eq("tipo", tipo);
-  }
-
-  const { data: rondas } = await query;
-
   return (
     <div className="space-y-4">
       <div>
         <h1 className="text-xl font-semibold text-slate-100">Rondas semanais</h1>
-        <p className="text-sm text-slate-400">Histórico das rondas WhatsApp e Calls</p>
-      </div>
-
-      <div className="flex gap-1.5">
-        <Link
-          href="/rondas"
-          className={cn(
-            "rounded-md px-2.5 py-1 text-xs font-medium transition-colors",
-            !tipo ? "bg-slate-600 text-slate-200" : "text-slate-400 hover:bg-slate-700",
-          )}
-        >
-          Todas
-        </Link>
-        <Link
-          href="/rondas?tipo=whatsapp"
-          className={cn(
-            "rounded-md px-2.5 py-1 text-xs font-medium transition-colors",
-            tipo === "whatsapp"
-              ? "bg-slate-600 text-slate-200"
-              : "text-slate-400 hover:bg-slate-700",
-          )}
-        >
-          WhatsApp
-        </Link>
-        <Link
-          href="/rondas?tipo=calls"
-          className={cn(
-            "rounded-md px-2.5 py-1 text-xs font-medium transition-colors",
-            tipo === "calls" ? "bg-slate-600 text-slate-200" : "text-slate-400 hover:bg-slate-700",
-          )}
-        >
-          Calls
-        </Link>
+        <p className="text-sm text-slate-400">Histórico dos relatórios semanais de calls</p>
       </div>
 
       <div className="overflow-hidden rounded-xl border border-slate-700">
@@ -74,7 +31,6 @@ export default async function RondasPage({
           <thead>
             <tr className="border-b border-slate-700 bg-slate-800/60">
               <th className="px-4 py-3 text-left text-xs font-medium text-slate-400">Período</th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-slate-400">Tipo</th>
               <th className="px-4 py-3 text-left text-xs font-medium text-slate-400">Status</th>
               <th className="px-4 py-3 text-left text-xs font-medium text-slate-400">Enviada em</th>
             </tr>
@@ -82,7 +38,7 @@ export default async function RondasPage({
           <tbody className="divide-y divide-slate-700/60">
             {(rondas ?? []).length === 0 ? (
               <tr>
-                <td colSpan={4} className="px-4 py-8 text-center text-sm text-slate-500">
+                <td colSpan={3} className="px-4 py-8 text-center text-sm text-slate-500">
                   Nenhuma ronda encontrada
                 </td>
               </tr>
@@ -100,18 +56,6 @@ export default async function RondasPage({
                         {inicio} — {fim}
                       </Link>
                       {r.vazia && <span className="ml-2 text-[10px] text-slate-600">(vazia)</span>}
-                    </td>
-                    <td className="px-4 py-3">
-                      <span
-                        className={cn(
-                          "rounded-full px-2 py-0.5 text-[10px] font-medium",
-                          r.tipo === "whatsapp"
-                            ? "bg-cyan-500/20 text-cyan-300"
-                            : "bg-indigo-500/20 text-indigo-300",
-                        )}
-                      >
-                        {r.tipo}
-                      </span>
                     </td>
                     <td className="px-4 py-3">
                       <span

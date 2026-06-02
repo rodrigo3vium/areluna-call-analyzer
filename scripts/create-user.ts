@@ -116,9 +116,9 @@ async function main() {
 
   // 4. Enviar email via Resend
   const { error: emailError } = await resend.emails.send({
-    from: "Atlas OS Comercial <noreply@benitesalbuquerque.com.br>",
+    from: "Areluna Call Analyzer <noreply@benitesalbuquerque.com.br>",
     to: email,
-    subject: "Defina sua senha — Atlas OS Comercial",
+    subject: "Defina sua senha — Areluna Call Analyzer",
     html: buildInviteEmail(name || email, recoveryLink, role),
   });
 
@@ -142,9 +142,9 @@ function buildInviteEmail(nameOrEmail: string, link: string, role: Role): string
   return `
 <!DOCTYPE html>
 <html lang="pt-BR">
-<head><meta charset="utf-8"><title>Bem-vindo ao Atlas OS Comercial</title></head>
+<head><meta charset="utf-8"><title>Bem-vindo ao Areluna Call Analyzer</title></head>
 <body style="font-family: Arial, sans-serif; max-width: 480px; margin: 0 auto; padding: 24px; color: #1e293b;">
-  <h2 style="color: #0ea5e9; margin-bottom: 8px;">Atlas OS Comercial</h2>
+  <h2 style="color: #0ea5e9; margin-bottom: 8px;">Areluna Call Analyzer</h2>
   <p>Olá, <strong>${nameOrEmail}</strong>.</p>
   <p>Sua conta foi criada com o perfil de <strong>${roleLabel[role]}</strong>.</p>
   <p>Clique no botão abaixo para definir sua senha e acessar o sistema:</p>

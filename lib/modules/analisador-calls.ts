@@ -1,8 +1,6 @@
 import Anthropic from "@anthropic-ai/sdk";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { PROMPT_VERSION, SYSTEM_PROMPT_ANALISE } from "@/lib/prompts/analyze-call";
-import { matchCallLead } from "@/lib/modules/matcher-call-lead";
-import { dispararAlertaSeNecessario } from "@/lib/modules/alerta-imediato";
 import { log } from "@/lib/log";
 
 const MODELO = "claude-sonnet-4-6";
@@ -14,10 +12,12 @@ export type ResultadoAnaliseCall = {
 };
 
 type AnaliseCallIA = {
-  classificacao: "excelente" | "bom" | "regular" | "insuficiente";
-  score_geral: number;
-  fases: Record<string, { score: number; observacao: string }>;
-  diagnostico: string | null;
+  classificacao: "EXCELENTE" | "BOM" | "REGULAR" | "INSUFICIENTE";
+  score: number;
+  performance_por_criterio: Record<string, number>;
+  sinais_vermelhos: number[];
+  pontos_melhoria: string[];
+  diagnostico_ia: string | null;
   acao_recomendada: string | null;
 };
 
@@ -36,25 +36,33 @@ export async function analisarCallsPendentes(
   const { data: calls } = await supabase
     .schema("comercial")
     .from("calls")
-    .select("id, transcricao, titulo")
-    .not("transcricao", "is", null)
-    .is("analisada_em", null)
+    .select("id, transcricao, sharepoint_file_name")
+    .eq("status_analise", "aguardando_analise")
     .limit(BATCH_SIZE)
     .throwOnError();
 
   for (const call of calls ?? []) {
+    // Marcar em análise
+    await supabase
+      .schema("comercial")
+      .from("calls")
+      .update({ status_analise: "em_analise" })
+      .eq("id", call.id)
+      .throwOnError();
+
     try {
-      // Análise e match rodam em paralelo
-      await Promise.all([
-        analisarCall(call.id, call.transcricao!, call.titulo, supabase),
-        matchCallLead(call.id, supabase),
-      ]);
+      await analisarCall(call.id, call.transcricao!, call.sharepoint_file_name, supabase);
       resultado.analisadas++;
     } catch (err) {
-      log.error("analisador_calls.erro", {
-        callId: call.id,
-        erro: err instanceof Error ? err.message : String(err),
-      });
+      const msg = err instanceof Error ? err.message : String(err);
+      log.error("analisador_calls.erro", { callId: call.id, erro: msg });
+
+      await supabase
+        .schema("comercial")
+        .from("calls")
+        .update({ status_analise: "erro" })
+        .eq("id", call.id);
+
       resultado.erros++;
     }
   }
@@ -65,14 +73,12 @@ export async function analisarCallsPendentes(
 async function analisarCall(
   callId: string,
   transcricao: string,
-  titulo: string | null,
+  nomeArquivo: string,
   supabase: SupabaseClient,
 ) {
   const client = getAnthropicClient();
 
-  const contexto = titulo
-    ? `Título da call: ${titulo}\n\nTranscrição:\n${transcricao}`
-    : transcricao;
+  const contexto = `Arquivo: ${nomeArquivo}\n\nTranscrição:\n${transcricao}`;
 
   const response = await client.messages.create({
     model: MODELO,
@@ -97,55 +103,37 @@ async function analisarCall(
     throw new Error("Resposta Anthropic sem conteúdo de texto");
   }
 
-  const analise = JSON.parse(textBlock.text) as AnaliseCallIA;
+  const rawText = textBlock.text.trim();
+  const jsonText = rawText.startsWith("```")
+    ? rawText
+        .replace(/^```(?:json)?\s*/i, "")
+        .replace(/\s*```$/, "")
+        .trim()
+    : rawText;
 
+  const analise = JSON.parse(jsonText) as AnaliseCallIA;
+
+  log.info("analisador_calls.analise_concluida", {
+    callId,
+    score: analise.score,
+    classificacao: analise.classificacao,
+    promptVersion: PROMPT_VERSION,
+  });
+
+  // Gravar análise inline na call — transição atômica para 'analisada'
   await supabase
     .schema("comercial")
-    .from("analises_calls")
-    .insert({
-      call_id: callId,
+    .from("calls")
+    .update({
       classificacao: analise.classificacao,
-      score_geral: analise.score_geral,
-      fases: analise.fases ?? {},
-      diagnostico: analise.diagnostico ?? null,
+      score: analise.score,
+      performance_por_criterio: analise.performance_por_criterio ?? {},
+      sinais_vermelhos: analise.sinais_vermelhos ?? [],
+      pontos_melhoria: analise.pontos_melhoria ?? [],
+      diagnostico_ia: analise.diagnostico_ia ?? null,
       acao_recomendada: analise.acao_recomendada ?? null,
-      modelo: MODELO,
-      prompt_versao: PROMPT_VERSION,
-      tokens_entrada: response.usage?.input_tokens ?? null,
-      tokens_saida: response.usage?.output_tokens ?? null,
+      status_analise: "analisada",
     })
-    .throwOnError();
-
-  await supabase
-    .schema("comercial")
-    .from("calls")
-    .update({ analisada_em: new Date().toISOString() })
     .eq("id", callId)
     .throwOnError();
-
-  // Alerta imediato se score baixo
-  const { data: call } = await supabase
-    .schema("comercial")
-    .from("calls")
-    .select("lead_id, leads(nome, telefone)")
-    .eq("id", callId)
-    .single();
-
-  if (call?.lead_id) {
-    const leadsRaw = call.leads;
-    const lead = (Array.isArray(leadsRaw) ? leadsRaw[0] : leadsRaw) as {
-      nome: string;
-      telefone: string;
-    } | null;
-    if (lead) {
-      await dispararAlertaSeNecessario(
-        "call",
-        call.lead_id as string,
-        lead.nome,
-        lead.telefone,
-        analise.score_geral,
-        supabase,
-      );
-    }
-  }
 }

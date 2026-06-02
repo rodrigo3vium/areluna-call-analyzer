@@ -15,6 +15,6 @@ export const config = {
      * - /api/webhooks/* (webhooks recebem sem auth de sessão)
      * - /api/cron/* (autenticados via CRON_SECRET no próprio handler)
      */
-    "/((?!_next/static|_next/image|favicon.ico|sitemap.xml|robots.txt|api/webhooks|api/cron).*)",
+    "/((?!_next/static|_next/image|favicon.ico|sitemap.xml|robots.txt|api/cron).*)",
   ],
 };

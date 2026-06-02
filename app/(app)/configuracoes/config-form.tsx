@@ -8,21 +8,15 @@ import { Label } from "@/components/ui/label";
 
 type Configuracoes = {
   nome_clinica: string;
-  destinatarios_whatsapp: string[];
   destinatarios_calls: string[];
   threshold_score_baixo: number;
-  threshold_alerta_imediato_whatsapp: number;
-  janela_analise_mensagens: number;
 };
 
 export function ConfigForm({ config }: { config: Configuracoes }) {
   const [form, setForm] = useState({
     nome_clinica: config.nome_clinica,
-    destinatarios_whatsapp: config.destinatarios_whatsapp.join(", "),
     destinatarios_calls: config.destinatarios_calls.join(", "),
     threshold_score_baixo: String(config.threshold_score_baixo),
-    threshold_alerta_imediato_whatsapp: String(config.threshold_alerta_imediato_whatsapp),
-    janela_analise_mensagens: String(config.janela_analise_mensagens),
   });
   const [loading, setLoading] = useState(false);
   const [ok, setOk] = useState(false);
@@ -38,17 +32,11 @@ export function ConfigForm({ config }: { config: Configuracoes }) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           nome_clinica: form.nome_clinica.trim(),
-          destinatarios_whatsapp: form.destinatarios_whatsapp
-            .split(",")
-            .map((s) => s.trim())
-            .filter(Boolean),
           destinatarios_calls: form.destinatarios_calls
             .split(",")
             .map((s) => s.trim())
             .filter(Boolean),
           threshold_score_baixo: Number(form.threshold_score_baixo),
-          threshold_alerta_imediato_whatsapp: Number(form.threshold_alerta_imediato_whatsapp),
-          janela_analise_mensagens: Number(form.janela_analise_mensagens),
         }),
       });
       if (res.ok) {
@@ -76,23 +64,12 @@ export function ConfigForm({ config }: { config: Configuracoes }) {
 
   return (
     <form onSubmit={salvar} className="space-y-4">
-      {field("nome_clinica", "Nome da clínica")}
-      {field("destinatarios_whatsapp", "Destinatários — Ronda WhatsApp", "Separados por vírgula")}
+      {field("nome_clinica", "Nome da empresa")}
       {field("destinatarios_calls", "Destinatários — Ronda Calls", "Separados por vírgula")}
       {field(
         "threshold_score_baixo",
         "Threshold score baixo (dashboard)",
         "Score abaixo deste valor é destacado em vermelho",
-      )}
-      {field(
-        "threshold_alerta_imediato_whatsapp",
-        "Threshold alerta imediato WhatsApp",
-        "Score abaixo deste valor dispara email imediato",
-      )}
-      {field(
-        "janela_analise_mensagens",
-        "Janela de análise (nº de mensagens)",
-        "Quantas mensagens recentes enviar para a IA",
       )}
 
       <div className="flex items-center gap-3 pt-1">

@@ -117,9 +117,14 @@ Ver `.env.example` na raiz. Resumo das críticas:
 | `SUPABASE_SERVICE_ROLE_KEY` | Somente server-side/crons. Nunca expor ao cliente |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Frontend (safe to expose) |
 | `CRON_SECRET` | Validar header nas rotas `/api/cron/*` |
-| `EVOLUTION_WEBHOOK_SECRET` | Validar HMAC nos webhooks Evolution |
-| `ZAPIER_WEBHOOK_SECRET` | Validar token nos webhooks Zapier |
-| `ANTHROPIC_API_KEY` | Somente server-side |
+| `SHAREPOINT_TENANT_ID` | `lib/modules/sharepoint-client.ts` e `scripts/resolve-sharepoint-ids.ts` |
+| `SHAREPOINT_CLIENT_ID` | Idem |
+| `SHAREPOINT_CLIENT_SECRET` | Idem — somente server-side |
+| `SHAREPOINT_SITE_ID` | Resolvido via `tsx scripts/resolve-sharepoint-ids.ts` |
+| `SHAREPOINT_DRIVE_ID` | Idem |
+| `SHAREPOINT_FOLDER_ITEM_ID` | Idem |
+| `OPENAI_API_KEY` | `lib/modules/whisper.ts` — somente server-side |
+| `ANTHROPIC_API_KEY` | `lib/modules/analisador-calls.ts` — somente server-side |
 
 ---
 

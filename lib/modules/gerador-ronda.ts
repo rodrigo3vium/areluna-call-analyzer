@@ -1,50 +1,13 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import type { SnapshotCalls } from "@/lib/types";
 import { log } from "@/lib/log";
 
-export type TipoRonda = "whatsapp" | "calls";
-
-export type SnapshotWhatsapp = {
-  tipo: "whatsapp";
-  periodo: { inicio: string; fim: string };
-  total_conversas: number;
-  score_medio: number | null;
-  score_mais_alto: number | null;
-  score_mais_baixo: number | null;
-  distribuicao_score: { faixa: string; total: number }[];
-  top_tags_negativas: { tag: string; total: number }[];
-  top_tags_positivas: { tag: string; total: number }[];
-  conversas_criticas: {
-    conversa_id: string;
-    lead_nome: string | null;
-    score: number;
-    resumo: string | null;
-  }[];
-  origens: { origem: string; total: number }[];
-};
-
-export type SnapshotCalls = {
-  tipo: "calls";
-  periodo: { inicio: string; fim: string };
-  total_calls: number;
-  score_medio: number | null;
-  distribuicao_classificacao: { classificacao: string; total: number }[];
-  media_por_fase: Record<string, number | null>;
-  calls_insuficientes: {
-    call_id: string;
-    lead_nome: string | null;
-    score: number;
-    diagnostico: string | null;
-  }[];
-};
-
 export type ResultadoGeracaoRonda = {
-  tipo: TipoRonda;
   rondaId: string;
   vazia: boolean;
 };
 
 export async function gerarRonda(
-  tipo: TipoRonda,
   periodoInicio: Date,
   periodoFim: Date,
   supabase: SupabaseClient,
@@ -52,22 +15,15 @@ export async function gerarRonda(
   const inicio = periodoInicio.toISOString();
   const fim = periodoFim.toISOString();
 
-  const snapshot =
-    tipo === "whatsapp"
-      ? await gerarSnapshotWhatsapp(inicio, fim, supabase)
-      : await gerarSnapshotCalls(inicio, fim, supabase);
-
-  const vazia =
-    tipo === "whatsapp"
-      ? (snapshot as SnapshotWhatsapp).total_conversas === 0
-      : (snapshot as SnapshotCalls).total_calls === 0;
+  const snapshot = await gerarSnapshotCalls(inicio, fim, supabase);
+  const vazia = snapshot.total_calls === 0;
 
   const { data: ronda } = await supabase
     .schema("comercial")
     .from("rondas")
     .upsert(
       {
-        tipo,
+        tipo: "calls" as const,
         periodo_inicio: inicio,
         periodo_fim: fim,
         snapshot,
@@ -80,117 +36,9 @@ export async function gerarRonda(
     .single()
     .throwOnError();
 
-  log.info("gerador_ronda.gerado", { tipo, inicio, fim, vazia, rondaId: ronda!.id });
+  log.info("gerador_ronda.gerado", { inicio, fim, vazia, rondaId: ronda!.id });
 
-  return { tipo, rondaId: ronda!.id, vazia };
-}
-
-async function gerarSnapshotWhatsapp(
-  inicio: string,
-  fim: string,
-  supabase: SupabaseClient,
-): Promise<SnapshotWhatsapp> {
-  const { data: analises } = await supabase
-    .schema("comercial")
-    .from("analises_whatsapp")
-    .select(
-      `
-      score,
-      tags_positivas,
-      tags_negativas,
-      resumo,
-      origem_detectada,
-      conversa_id,
-      conversas!inner(lead_id, leads(nome))
-    `,
-    )
-    .gte("created_at", inicio)
-    .lte("created_at", fim);
-
-  if (!analises?.length) {
-    return {
-      tipo: "whatsapp",
-      periodo: { inicio, fim },
-      total_conversas: 0,
-      score_medio: null,
-      score_mais_alto: null,
-      score_mais_baixo: null,
-      distribuicao_score: [],
-      top_tags_negativas: [],
-      top_tags_positivas: [],
-      conversas_criticas: [],
-      origens: [],
-    };
-  }
-
-  const scores = analises.map((a) => Number(a.score));
-  const scoreMedio = scores.reduce((a, b) => a + b, 0) / scores.length;
-
-  const faixas = [
-    { faixa: "0-30", min: 0, max: 30 },
-    { faixa: "31-50", min: 31, max: 50 },
-    { faixa: "51-70", min: 51, max: 70 },
-    { faixa: "71-85", min: 71, max: 85 },
-    { faixa: "86-100", min: 86, max: 100 },
-  ];
-
-  const distribuicao_score = faixas.map(({ faixa, min, max }) => ({
-    faixa,
-    total: scores.filter((s) => s >= min && s <= max).length,
-  }));
-
-  const tagCount = (field: "tags_positivas" | "tags_negativas") => {
-    const counts: Record<string, number> = {};
-    analises.forEach((a) => {
-      (a[field] as string[]).forEach((t) => {
-        counts[t] = (counts[t] ?? 0) + 1;
-      });
-    });
-    return Object.entries(counts)
-      .sort((a, b) => b[1] - a[1])
-      .slice(0, 10)
-      .map(([tag, total]) => ({ tag, total }));
-  };
-
-  const conversas_criticas = analises
-    .filter((a) => Number(a.score) < 40)
-    .sort((a, b) => Number(a.score) - Number(b.score))
-    .slice(0, 5)
-    .map((a) => {
-      const conv = a.conversas as unknown as {
-        lead_id: string | null;
-        leads: { nome: string } | null;
-      } | null;
-      return {
-        conversa_id: a.conversa_id as string,
-        lead_nome: conv?.leads?.nome ?? null,
-        score: Number(a.score),
-        resumo: a.resumo as string | null,
-      };
-    });
-
-  const origemCount: Record<string, number> = {};
-  analises.forEach((a) => {
-    const o = (a.origem_detectada as string | null) ?? "desconhecida";
-    origemCount[o] = (origemCount[o] ?? 0) + 1;
-  });
-  const origens = Object.entries(origemCount)
-    .sort((a, b) => b[1] - a[1])
-    .map(([origem, total]) => ({ origem, total }));
-
-  return {
-    tipo: "whatsapp",
-    periodo: { inicio, fim },
-    total_conversas: analises.length,
-    score_medio: Math.round(scoreMedio * 10) / 10,
-    score_mais_alto: Math.max(...scores),
-    score_mais_baixo: Math.min(...scores),
-    distribuicao_score,
-    top_tags_negativas: tagCount("tags_negativas"),
-    top_tags_positivas: tagCount("tags_positivas"),
-    conversas_criticas,
-    origens,
-  };
+  return { rondaId: ronda!.id, vazia };
 }
 
 async function gerarSnapshotCalls(
@@ -198,102 +46,107 @@ async function gerarSnapshotCalls(
   fim: string,
   supabase: SupabaseClient,
 ): Promise<SnapshotCalls> {
-  const { data: analises } = await supabase
+  const { data: calls } = await supabase
     .schema("comercial")
-    .from("analises_calls")
+    .from("calls")
     .select(
       `
-      score_geral,
+      id,
+      score,
       classificacao,
-      fases,
-      diagnostico,
-      call_id,
-      calls!inner(lead_id, leads(nome))
+      diagnostico_ia,
+      data_gravacao,
+      closer_id,
+      closers(id, nome)
     `,
     )
-    .gte("created_at", inicio)
-    .lte("created_at", fim);
+    .eq("status_analise", "analisada")
+    .gte("data_gravacao", inicio)
+    .lte("data_gravacao", fim);
 
-  if (!analises?.length) {
+  if (!calls?.length) {
     return {
-      tipo: "calls",
-      periodo: { inicio, fim },
       total_calls: 0,
       score_medio: null,
-      distribuicao_classificacao: [],
-      media_por_fase: {},
+      distribuicao_classificacao: { EXCELENTE: 0, BOM: 0, REGULAR: 0, INSUFICIENTE: 0 },
+      por_closer: [],
       calls_insuficientes: [],
     };
   }
 
-  const scores = analises.map((a) => Number(a.score_geral));
-  const scoreMedio = scores.reduce((a, b) => a + b, 0) / scores.length;
+  const scores = calls.filter((c) => c.score !== null).map((c) => Number(c.score));
+  const scoreMedio = scores.length
+    ? Math.round((scores.reduce((a, b) => a + b, 0) / scores.length) * 10) / 10
+    : null;
 
-  const classCount: Record<string, number> = {};
-  analises.forEach((a) => {
-    const c = a.classificacao as string;
-    classCount[c] = (classCount[c] ?? 0) + 1;
-  });
-  const distribuicao_classificacao = Object.entries(classCount).map(([classificacao, total]) => ({
-    classificacao,
-    total,
-  }));
-
-  const fasesNomes = [
-    "preparacao",
-    "abertura",
-    "diagnostico",
-    "apresentacao_clinica",
-    "apresentacao_investimento",
-    "fechamento",
-    "objecoes",
-    "sabotadores",
-  ];
-  const media_por_fase: Record<string, number | null> = {};
-  for (const fase of fasesNomes) {
-    const vals = analises
-      .map((a) => {
-        const f = a.fases as Record<string, { score?: number }> | null;
-        return f?.[fase]?.score ?? null;
-      })
-      .filter((v): v is number => v !== null);
-    media_por_fase[fase] = vals.length
-      ? Math.round((vals.reduce((a, b) => a + b, 0) / vals.length) * 10) / 10
-      : null;
+  const distribuicao_classificacao = { EXCELENTE: 0, BOM: 0, REGULAR: 0, INSUFICIENTE: 0 };
+  for (const call of calls) {
+    const c = call.classificacao as keyof typeof distribuicao_classificacao | null;
+    if (c && c in distribuicao_classificacao) distribuicao_classificacao[c]++;
   }
 
-  const calls_insuficientes = analises
-    .filter((a) => a.classificacao === "insuficiente")
-    .sort((a, b) => Number(a.score_geral) - Number(b.score_geral))
+  // Agrupamento por closer
+  const closerMap = new Map<
+    string,
+    { closer_id: string; closer_nome: string; total: number; scores: number[] }
+  >();
+  for (const call of calls) {
+    const closerRaw = call.closers;
+    const closer = (Array.isArray(closerRaw) ? closerRaw[0] : closerRaw) as
+      | { id: string; nome: string }
+      | null
+      | undefined;
+    if (!closer) continue;
+    const entry = closerMap.get(closer.id) ?? {
+      closer_id: closer.id,
+      closer_nome: closer.nome,
+      total: 0,
+      scores: [],
+    };
+    entry.total++;
+    if (call.score !== null) entry.scores.push(Number(call.score));
+    closerMap.set(closer.id, entry);
+  }
+  const por_closer = Array.from(closerMap.values())
+    .map(({ scores: s, ...rest }) => ({
+      ...rest,
+      score_medio: s.length
+        ? Math.round((s.reduce((a, b) => a + b, 0) / s.length) * 10) / 10
+        : null,
+    }))
+    .sort((a, b) => b.total - a.total);
+
+  const calls_insuficientes = calls
+    .filter((c) => c.classificacao === "INSUFICIENTE")
+    .sort((a, b) => Number(a.score ?? 0) - Number(b.score ?? 0))
     .slice(0, 5)
-    .map((a) => {
-      const call = a.calls as unknown as {
-        lead_id: string | null;
-        leads: { nome: string } | null;
-      } | null;
+    .map((c) => {
+      const closerRaw2 = c.closers;
+      const closer2 = (Array.isArray(closerRaw2) ? closerRaw2[0] : closerRaw2) as
+        | { id: string; nome: string }
+        | null
+        | undefined;
       return {
-        call_id: a.call_id as string,
-        lead_nome: call?.leads?.nome ?? null,
-        score: Number(a.score_geral),
-        diagnostico: a.diagnostico as string | null,
+        id: c.id,
+        closer_nome: closer2?.nome ?? null,
+        score: c.score !== null ? Number(c.score) : null,
+        data_gravacao: c.data_gravacao as string | null,
+        diagnostico_ia: c.diagnostico_ia as string | null,
       };
     });
 
   return {
-    tipo: "calls",
-    periodo: { inicio, fim },
-    total_calls: analises.length,
-    score_medio: Math.round(scoreMedio * 10) / 10,
+    total_calls: calls.length,
+    score_medio: scoreMedio,
     distribuicao_classificacao,
-    media_por_fase,
+    por_closer,
     calls_insuficientes,
   };
 }
 
 export function calcularPeriodoSemanaAnterior(): { inicio: Date; fim: Date } {
   const agora = new Date();
-  const diaSemana = agora.getDay(); // 0 = domingo, 1 = segunda...
-  // segunda-feira desta semana
+  const diaSemana = agora.getDay();
   const segundaFeira = new Date(agora);
   segundaFeira.setDate(agora.getDate() - ((diaSemana + 6) % 7));
   segundaFeira.setHours(0, 0, 0, 0);
