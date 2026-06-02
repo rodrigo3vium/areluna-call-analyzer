@@ -1,9 +1,11 @@
-import Anthropic from "@anthropic-ai/sdk";
+import OpenAI from "openai";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { PROMPT_VERSION, SYSTEM_PROMPT_ANALISE } from "@/lib/prompts/analyze-call";
 import { log } from "@/lib/log";
 
-const MODELO = "claude-sonnet-4-6";
+// Usando OpenAI temporariamente (crédito Anthropic zerado).
+// Trocar MODELO + cliente de volta para claude-sonnet-4-6 quando recarregar crédito.
+const MODELO = "gpt-4o";
 const BATCH_SIZE = 10;
 
 export type ResultadoAnaliseCall = {
@@ -21,11 +23,11 @@ type AnaliseCallIA = {
   acao_recomendada: string | null;
 };
 
-let _anthropic: Anthropic | null = null;
+let _openai: OpenAI | null = null;
 
-function getAnthropicClient() {
-  if (!_anthropic) _anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
-  return _anthropic;
+function getOpenAIClient() {
+  if (!_openai) _openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+  return _openai;
 }
 
 export async function analisarCallsPendentes(
@@ -76,34 +78,25 @@ async function analisarCall(
   nomeArquivo: string,
   supabase: SupabaseClient,
 ) {
-  const client = getAnthropicClient();
+  const client = getOpenAIClient();
 
   const contexto = `Arquivo: ${nomeArquivo}\n\nTranscrição:\n${transcricao}`;
 
-  const response = await client.messages.create({
+  const response = await client.chat.completions.create({
     model: MODELO,
     max_tokens: 2048,
-    system: [
-      {
-        type: "text",
-        text: SYSTEM_PROMPT_ANALISE,
-        cache_control: { type: "ephemeral" },
-      },
-    ],
+    response_format: { type: "json_object" },
     messages: [
-      {
-        role: "user",
-        content: `Avalie esta call de fechamento:\n\n${contexto}`,
-      },
+      { role: "system", content: SYSTEM_PROMPT_ANALISE },
+      { role: "user", content: `Avalie esta call de fechamento:\n\n${contexto}` },
     ],
   });
 
-  const textBlock = response.content.find((c) => c.type === "text");
-  if (!textBlock || textBlock.type !== "text") {
-    throw new Error("Resposta Anthropic sem conteúdo de texto");
+  const rawText = response.choices[0]?.message?.content?.trim();
+  if (!rawText) {
+    throw new Error("Resposta OpenAI sem conteúdo de texto");
   }
 
-  const rawText = textBlock.text.trim();
   const jsonText = rawText.startsWith("```")
     ? rawText
         .replace(/^```(?:json)?\s*/i, "")
