@@ -3,8 +3,6 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { PROMPT_VERSION, SYSTEM_PROMPT_ANALISE } from "@/lib/prompts/analyze-call";
 import { log } from "@/lib/log";
 
-// Usando OpenAI temporariamente (crédito Anthropic zerado).
-// Trocar MODELO + cliente de volta para claude-sonnet-4-6 quando recarregar crédito.
 const MODELO = "gpt-4o";
 const BATCH_SIZE = 10;
 

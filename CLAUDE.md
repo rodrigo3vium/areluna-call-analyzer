@@ -23,8 +23,7 @@ Este fork é o **Instituto Areluna do Porto** (implantodontia de alto ticket, Po
 | Erros | **`.throwOnError()`** obrigatório em toda query. Sem `if (error)` manual |
 | Queries complexas | Viram RPC (função Postgres). Não criar queries SQL inline longas no TS |
 | Tailwind | **v3.4**. Não migrar para v4 |
-| Modelo IA | **`claude-sonnet-4-6`** em todas as análises. Não trocar sem motivo explícito |
-| Prompt caching | **`cache_control: { type: "ephemeral" }`** em todos os system prompts |
+| Modelo IA | **`gpt-4o`** (OpenAI) para análise de calls. `response_format: json_object` obrigatório |
 | Timestamps | **`timestamptz`** no banco. Nunca `timestamp without time zone` |
 | Telefone | **E.164** (`+5511...`). Normalizar via `lib/phone.ts` |
 | Migrations | Arquivos em `supabase/migrations/`. Nunca editar migration já aplicada — criar nova |
