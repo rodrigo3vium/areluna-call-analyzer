@@ -1,4 +1,4 @@
-# CLAUDE.md — Atlas OS Comercial
+# CLAUDE.md — Areluna Call Analyzer (Atlas OS Comercial)
 
 Guia de comportamento para o Claude Code neste repositório. Leia antes de qualquer tarefa.
 
@@ -6,7 +6,9 @@ Guia de comportamento para o Claude Code neste repositório. Leia antes de qualq
 
 ## Contexto do Projeto
 
-Sistema de inteligência comercial **single-tenant** para clínicas médicas brasileiras. Cada cliente é um fork isolado deste repositório com Vercel + Supabase próprios. Sem multi-tenancy. Sem SaaS.
+Sistema de inteligência comercial **single-tenant** para clínicas médicas. Cada cliente é um fork isolado deste repositório com Vercel + Supabase próprios. Sem multi-tenancy. Sem SaaS.
+
+Este fork é o **Instituto Areluna do Porto** (implantodontia de alto ticket, Portugal). O produto avalia **calls comerciais** gravadas: as gravações ficam no **SharePoint** (estrutura `NomeDoCloser/arquivo.mov`), são transcritas via **Whisper** e analisadas pela IA com o **Método Vitor Balduino Oliveira** (régua Sinal + Marcação). O resultado vira score + diagnóstico por call, agregado numa **ronda semanal** enviada por email.
 
 **BA Consultoria** mantém conta `admin` em `autorizados` por cliente. Transferência de repositório + infra acontece no kickoff.
 
@@ -52,10 +54,6 @@ const { data, error } = await supabase.from("leads").select("*");
 
 Toda rota de cron valida `Authorization: Bearer $CRON_SECRET` antes de executar. O Vercel injeta o header automaticamente; não remover essa validação.
 
-### Webhooks
-
-Padrão ack-first obrigatório: valida secret → insere em `eventos_brutos` → responde `200`. O processamento acontece no cron `processar-eventos`. Nunca processar inline no webhook.
-
 ### Server vs Client
 
 - Queries ao banco: sempre em Server Components ou Route Handlers com `createServiceClient()` (service role, bypassa RLS)
@@ -64,21 +62,47 @@ Padrão ack-first obrigatório: valida secret → insere em `eventos_brutos` →
 
 ---
 
+## Pipeline de Análise de Calls
+
+Quatro crons encadeados por status na tabela `comercial.calls`:
+
+```
+sync-sharepoint (*/15)   → lista a pasta SharePoint, cria 1 call por arquivo novo.
+                           Closer = nome da pasta, resolvido via resolver-closer.ts.
+                           status: transcricao_status='pendente'
+transcrever-calls (*/5)  → baixa o arquivo, extrai áudio (Whisper + ffmpeg), transcreve.
+                           status: 'concluida' → status_analise='aguardando_analise'
+analise-calls (*/5)      → roda o Método Vitor (analyze-call.ts), grava score/diagnóstico.
+                           status_analise: 'analisada'
+ronda-semanal (seg 09h)  → agrega as calls da semana num email; backfill-rondas cobre falhas.
+```
+
+- **Closers** (`comercial.closers`): cadastrados com `nome` = nome exato da pasta no SharePoint. O `resolver-closer.ts` faz match por `normalizarTexto(nome)`. Seed inicial: `scripts/seed-closers.ts`.
+- **Whisper** (`lib/modules/whisper.ts`): aceita até 25MB e não engole container de vídeo. Para qualquer `.mov`/`.mp4` (magic `ftyp`) ou arquivo grande, extrai áudio **mono 32kbps m4a** via `ffmpeg` antes de enviar (~104 min cabem em 25MB). Calls mais longas estouram o limite → precisam de chunking (follow-up).
+  - **⚠️ Produção (Vercel):** o `ffmpeg` é chamado via `execFile` (binário do sistema). O runtime serverless do Vercel **não tem ffmpeg por padrão** — precisa de layer/binário empacotado ou serviço externo de extração. Hoje só roda local.
+- **Análise IA** (`lib/prompts/analyze-call.ts`): Método Vitor, 7 blocos (A–G) + bônus, 8 sinais vermelhos, saída JSON. `PROMPT_VERSION` versiona o prompt. O modelo às vezes embrulha o JSON em ```` ```json ````; o `analisador-calls.ts` faz strip antes do `JSON.parse`.
+
+---
+
 ## Estrutura de Arquivos
 
 ```
 app/
-  (app)/          # Telas autenticadas (protegidas por middleware)
+  (app)/          # Telas autenticadas: dashboard, calls, closers, rondas, configuracoes
   (auth)/         # Login, definir-senha, redefinir-senha
   api/
-    cron/         # 7 crons (protegidos por CRON_SECRET)
-    webhooks/     # evolution + zapier-plaud
+    cron/         # 5 crons: sync-sharepoint, transcrever-calls, analise-calls,
+                  #          ronda-semanal, backfill-rondas (protegidos por CRON_SECRET)
 lib/
-  modules/        # Lógica de negócio (sem dependências de framework)
-  prompts/        # System prompts Claude (analyze-call, analyze-whatsapp)
+  modules/        # Lógica de negócio: sharepoint-client, whisper, parser-nome-arquivo,
+                  #   resolver-closer, sync-sharepoint, transcritor-calls, analisador-calls,
+                  #   gerador-ronda, email-renderer-ronda, enviador-resend
+  prompts/        # System prompt Claude (analyze-call — Método Vitor)
   supabase/       # Clientes (client, server, middleware) + types.ts
+  utils/          # normalizar.ts (normalização de texto p/ match de closer)
   phone.ts        # Normalização E.164
   log.ts          # Logger estruturado JSON
+scripts/          # resolve-sharepoint-ids, seed-closers, seed-test-closer, create-user
 supabase/
   migrations/     # SQL versionado (nunca editar o que já foi aplicado)
   seeds/          # seed.sql para dev local; _template.sql para kickoff de cliente
@@ -123,8 +147,9 @@ Ver `.env.example` na raiz. Resumo das críticas:
 | `SHAREPOINT_SITE_ID` | Resolvido via `tsx scripts/resolve-sharepoint-ids.ts` |
 | `SHAREPOINT_DRIVE_ID` | Idem |
 | `SHAREPOINT_FOLDER_ITEM_ID` | Idem |
-| `OPENAI_API_KEY` | `lib/modules/whisper.ts` — somente server-side |
-| `ANTHROPIC_API_KEY` | `lib/modules/analisador-calls.ts` — somente server-side |
+| `OPENAI_API_KEY` | `lib/modules/whisper.ts` (transcrição) — somente server-side |
+| `ANTHROPIC_API_KEY` | `lib/modules/analisador-calls.ts` (Método Vitor) — somente server-side |
+| `RESEND_API_KEY` | `lib/modules/enviador-resend.ts` (ronda semanal) — somente server-side |
 
 ---
 
@@ -134,7 +159,8 @@ Ver `.env.example` na raiz. Resumo das críticas:
 2. Criar projeto Supabase `sa-east-1` na conta do cliente
 3. `supabase db push` (ou SQL Editor para redes restritas)
 4. Criar projeto Vercel, conectar repo, preencher env vars
-5. Configurar Resend como SMTP do Supabase Auth
+5. Configurar Resend (API key em `RESEND_API_KEY`) para a ronda semanal
 6. `npm run admin:create-user` para dono, head e admin BA
-7. Configurar Evolution instance em `/configuracoes`
-8. Validar end-to-end com 1 mensagem + 1 call reais
+7. Configurar credenciais SharePoint: `tsx scripts/resolve-sharepoint-ids.ts "<URL_DA_PASTA>"` → colar os IDs no `.env.local`
+8. Cadastrar os closers (nome = nome das pastas no SharePoint) — `scripts/seed-closers.ts` como base
+9. Validar end-to-end: 1 arquivo real na pasta → sync → transcrever → analisar

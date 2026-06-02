@@ -6,8 +6,9 @@ import { tmpdir } from "os";
 import { writeFile, readFile, unlink } from "fs/promises";
 import { join } from "path";
 
-// Whisper tem limite de 25MB. Arquivos .mov QuickTime (ftyp "qt  ") precisam de conversão.
-// ffmpeg extrai só o áudio em m4a, resolvendo container incompatível e o limite de tamanho.
+// Whisper tem limite de 25MB e não aceita containers de vídeo (.mov/.mp4).
+// ffmpeg extrai só o áudio em m4a mono/baixo bitrate, resolvendo container incompatível
+// E o limite de tamanho de uma vez (~104 min cabem em 25MB a 32k mono).
 // Em produção (Vercel), o ffmpeg precisa ser instalado na imagem — ver nota no CLAUDE.md.
 const LIMITE_BYTES = 25 * 1024 * 1024;
 
@@ -19,13 +20,11 @@ function getClient() {
   return _client;
 }
 
-function isQuickTime(buffer: Buffer): boolean {
-  // magic: offset 4–7 = "ftyp", offset 8–11 = brand. QuickTime usa "qt  "
-  return (
-    buffer.length > 11 &&
-    buffer.slice(4, 8).toString("ascii") === "ftyp" &&
-    buffer.slice(8, 12).toString("ascii") === "qt  "
-  );
+function isContainerVideo(buffer: Buffer): boolean {
+  // magic: offset 4–7 = "ftyp" cobre todos os containers ISO-BMFF / QuickTime
+  // (brand "qt  ", "mp42", "isom", "M4V ", etc.). Não basta checar só "qt  ":
+  // os .mov reais da Areluna vêm com brands variados e precisam igualmente de extração.
+  return buffer.length > 11 && buffer.slice(4, 8).toString("ascii") === "ftyp";
 }
 
 async function extrairAudioM4a(buffer: Buffer, originalName: string): Promise<Buffer> {
@@ -38,11 +37,13 @@ async function extrairAudioM4a(buffer: Buffer, originalName: string): Promise<Bu
     await execFileAsync("ffmpeg", [
       "-i",
       inPath,
-      "-vn", // só áudio
+      "-vn", // descarta vídeo
+      "-ac",
+      "1", // mono — call é voz, não precisa de estéreo
       "-c:a",
       "aac",
       "-b:a",
-      "64k", // 64kbps — suficiente para voz
+      "32k", // 32kbps mono: ~104 min cabem em 25MB, suficiente para voz
       "-y",
       outPath,
     ]);
@@ -62,7 +63,8 @@ export async function transcreverAudio(
   let uploadFileName = fileName;
   let uploadMimeType = mimeType;
 
-  if (isQuickTime(buffer)) {
+  // Extrai áudio para qualquer container de vídeo OU arquivo acima do limite.
+  if (isContainerVideo(buffer) || buffer.length > LIMITE_BYTES) {
     uploadBuffer = await extrairAudioM4a(buffer, fileName);
     uploadFileName = fileName.replace(/\.[^.]+$/, ".m4a");
     uploadMimeType = "audio/mp4";
@@ -70,8 +72,8 @@ export async function transcreverAudio(
 
   if (uploadBuffer.length > LIMITE_BYTES) {
     throw new Error(
-      `Arquivo "${fileName}" tem ${(uploadBuffer.length / 1024 / 1024).toFixed(1)}MB após extração de áudio. ` +
-        `Whisper aceita até 25MB.`,
+      `Arquivo "${fileName}" tem ${(uploadBuffer.length / 1024 / 1024).toFixed(1)}MB após extração de áudio mono 32k. ` +
+        `Whisper aceita até 25MB (~104 min). Call provavelmente excede esse limite — precisa de chunking.`,
     );
   }
 
