@@ -43,7 +43,7 @@ export default function LoginPage() {
           <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
             <Activity className="h-4 w-4 text-primary-foreground" />
           </div>
-          <span className="text-base font-semibold">Atlas OS Comercial</span>
+          <span className="text-base font-semibold">Areluna Call Analyzer</span>
         </div>
       </CardHeader>
 
@@ -56,7 +56,7 @@ export default function LoginPage() {
                 id="email"
                 name="email"
                 type="email"
-                placeholder="você@clinica.com"
+                placeholder="você@areluna.pt"
                 required
                 autoComplete="email"
               />
@@ -101,7 +101,7 @@ export default function LoginPage() {
                 id="forgot-email"
                 name="email"
                 type="email"
-                placeholder="você@clinica.com"
+                placeholder="você@areluna.pt"
                 required
                 autoComplete="email"
               />

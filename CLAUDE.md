@@ -1,4 +1,4 @@
-# CLAUDE.md — Areluna Call Analyzer (Atlas OS Comercial)
+# CLAUDE.md — Areluna Call Analyzer
 
 Guia de comportamento para o Claude Code neste repositório. Leia antes de qualquer tarefa.
 
@@ -39,14 +39,14 @@ Este fork é o **Instituto Areluna do Porto** (implantodontia de alto ticket, Po
 // Correto
 const { data } = await supabase
   .schema("comercial")
-  .from("leads")
-  .select("id, nome, status")
+  .from("calls")
+  .select("id, transcricao, status_analise")
   .eq("id", id)
   .single()
   .throwOnError();
 
 // Errado — nunca omitir .throwOnError() nem usar .schema sem "comercial"
-const { data, error } = await supabase.from("leads").select("*");
+const { data, error } = await supabase.from("calls").select("*");
 ```
 
 ### Crons
@@ -146,8 +146,7 @@ Ver `.env.example` na raiz. Resumo das críticas:
 | `SHAREPOINT_SITE_ID` | Resolvido via `tsx scripts/resolve-sharepoint-ids.ts` |
 | `SHAREPOINT_DRIVE_ID` | Idem |
 | `SHAREPOINT_FOLDER_ITEM_ID` | Idem |
-| `OPENAI_API_KEY` | `lib/modules/whisper.ts` (transcrição) — somente server-side |
-| `ANTHROPIC_API_KEY` | `lib/modules/analisador-calls.ts` (Método Vitor) — somente server-side |
+| `OPENAI_API_KEY` | `lib/modules/whisper.ts` (transcrição) + `analisador-calls.ts` (GPT-4o) — somente server-side |
 | `RESEND_API_KEY` | `lib/modules/enviador-resend.ts` (ronda semanal) — somente server-side |
 
 ---

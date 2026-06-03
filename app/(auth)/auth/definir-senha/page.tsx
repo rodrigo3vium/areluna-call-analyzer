@@ -66,7 +66,7 @@ export default function DefinirSenhaPage() {
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-4">
           <p className="text-sm text-muted-foreground">
-            Escolha uma senha para acessar o Atlas OS Comercial. Mínimo 10 caracteres.
+            Escolha uma senha para acessar o Areluna Call Analyzer. Mínimo 10 caracteres.
           </p>
 
           <div className="space-y-1.5">

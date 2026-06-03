@@ -11,7 +11,7 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "Atlas OS Comercial",
+  title: "Areluna Call Analyzer",
   description: "Gestão comercial inteligente para clínicas médicas",
 };
 
