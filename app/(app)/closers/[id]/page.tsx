@@ -2,23 +2,24 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { createServiceClient } from "@/lib/supabase/server";
 import { Badge } from "@/components/ui/badge";
+import { PageHeader } from "@/components/ui/page-header";
 import { cn } from "@/lib/utils";
 
 function classificacaoCor(cls: string | null) {
   const mapa: Record<string, string> = {
-    EXCELENTE: "text-emerald-400",
-    BOM: "text-cyan-400",
-    REGULAR: "text-yellow-400",
-    INSUFICIENTE: "text-red-400",
+    EXCELENTE: "text-success",
+    BOM: "text-info",
+    REGULAR: "text-warning",
+    INSUFICIENTE: "text-error",
   };
-  return cls ? (mapa[cls] ?? "text-slate-400") : "text-slate-500";
+  return cls ? (mapa[cls] ?? "text-muted-foreground") : "text-muted-foreground";
 }
 
-function scoreBadgeVariant(score: number | null): "default" | "secondary" | "destructive" {
-  if (score == null) return "secondary";
-  if (score >= 70) return "default";
-  if (score >= 40) return "secondary";
-  return "destructive";
+function scoreBadgeVariant(score: number | null): "success" | "warning" | "error" | "muted" {
+  if (score == null) return "muted";
+  if (score >= 70) return "success";
+  if (score >= 40) return "warning";
+  return "error";
 }
 
 export default async function CloserDetalhe({ params }: { params: Promise<{ id: string }> }) {
@@ -53,75 +54,84 @@ export default async function CloserDetalhe({ params }: { params: Promise<{ id: 
   return (
     <div className="space-y-6">
       <div>
-        <Link href="/closers" className="text-sm text-slate-400 hover:text-slate-200">
+        <Link href="/closers" className="text-sm text-muted-foreground hover:text-foreground">
           ← Closers
         </Link>
-        <div className="mt-1 flex items-center gap-3">
-          <h1 className="text-xl font-semibold text-slate-100">{closer.nome}</h1>
-          <span
-            className={cn(
-              "rounded-full px-2 py-0.5 text-[10px] font-medium",
-              closer.ativo
-                ? "bg-emerald-500/20 text-emerald-300"
-                : "bg-slate-500/20 text-slate-400",
-            )}
-          >
-            {closer.ativo ? "Ativo" : "Inativo"}
-          </span>
-        </div>
-        {closer.email && <p className="text-sm text-slate-400">{closer.email}</p>}
+        <PageHeader
+          eyebrow="Closer"
+          title={closer.nome}
+          subtitle={closer.email ?? undefined}
+          right={
+            <span
+              className={cn(
+                "rounded-full px-2 py-0.5 text-[10px] font-medium",
+                closer.ativo ? "bg-success/10 text-success" : "bg-sand text-muted-foreground",
+              )}
+            >
+              {closer.ativo ? "Ativo" : "Inativo"}
+            </span>
+          }
+        />
       </div>
 
       {/* KPIs */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-        <div className="rounded-lg border border-slate-700 bg-slate-800/40 p-3">
-          <p className="text-[10px] uppercase tracking-wide text-slate-500">Total de calls</p>
-          <p className="text-2xl font-bold text-cyan-300">{(calls ?? []).length}</p>
+        <div className="rounded-card border border-border bg-surface p-6 shadow-soft">
+          <p className="text-[10px] uppercase tracking-wide text-muted-foreground">
+            Total de calls
+          </p>
+          <p className="text-2xl font-bold text-gold-500">{(calls ?? []).length}</p>
         </div>
-        <div className="rounded-lg border border-slate-700 bg-slate-800/40 p-3">
-          <p className="text-[10px] uppercase tracking-wide text-slate-500">Analisadas</p>
-          <p className="text-2xl font-bold text-slate-100">{analisadas.length}</p>
+        <div className="rounded-card border border-border bg-surface p-6 shadow-soft">
+          <p className="text-[10px] uppercase tracking-wide text-muted-foreground">Analisadas</p>
+          <p className="text-2xl font-bold text-foreground">{analisadas.length}</p>
         </div>
-        <div className="rounded-lg border border-slate-700 bg-slate-800/40 p-3">
-          <p className="text-[10px] uppercase tracking-wide text-slate-500">Score médio</p>
-          <p className="text-2xl font-bold text-slate-100">{scoresMedio ?? "—"}</p>
+        <div className="rounded-card border border-border bg-surface p-6 shadow-soft">
+          <p className="text-[10px] uppercase tracking-wide text-muted-foreground">Score médio</p>
+          <p className="text-2xl font-bold text-foreground">{scoresMedio ?? "—"}</p>
         </div>
       </div>
 
       {/* Calls */}
       <div>
-        <h2 className="mb-3 text-sm font-medium text-slate-300">Calls</h2>
-        <div className="overflow-hidden rounded-xl border border-slate-700">
+        <h2 className="mb-3 text-sm font-medium text-foreground">Calls</h2>
+        <div className="overflow-hidden rounded-card border border-border bg-surface shadow-soft">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-slate-700 bg-slate-800/60">
-                <th className="px-4 py-3 text-left text-xs font-medium text-slate-400">Arquivo</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-slate-400">Data</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-slate-400">
+              <tr className="border-b border-border bg-sand">
+                <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground">
+                  Arquivo
+                </th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground">
+                  Data
+                </th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground">
                   Classificação
                 </th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-slate-400">Score</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground">
+                  Score
+                </th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-700/60">
+            <tbody className="divide-y divide-border">
               {(calls ?? []).length === 0 ? (
                 <tr>
-                  <td colSpan={4} className="px-4 py-8 text-center text-sm text-slate-500">
+                  <td colSpan={4} className="px-4 py-8 text-center text-sm text-muted-foreground">
                     Nenhuma call registrada
                   </td>
                 </tr>
               ) : (
                 (calls ?? []).map((c) => (
-                  <tr key={c.id} className="hover:bg-slate-800/40">
+                  <tr key={c.id} className="hover:bg-sand">
                     <td className="px-4 py-3">
                       <Link
                         href={`/calls/${c.id}`}
-                        className="font-medium text-slate-200 hover:text-cyan-300"
+                        className="font-medium text-gold-500 hover:underline"
                       >
                         {c.sharepoint_file_name}
                       </Link>
                     </td>
-                    <td className="px-4 py-3 text-xs text-slate-400">
+                    <td className="px-4 py-3 text-xs text-muted-foreground">
                       {c.data_gravacao
                         ? new Intl.DateTimeFormat("pt-BR").format(new Date(c.data_gravacao))
                         : "—"}
@@ -143,7 +153,7 @@ export default async function CloserDetalhe({ params }: { params: Promise<{ id: 
                           {c.score}
                         </Badge>
                       ) : (
-                        <span className="text-xs text-slate-600">—</span>
+                        <span className="text-xs text-muted-foreground">—</span>
                       )}
                     </td>
                   </tr>

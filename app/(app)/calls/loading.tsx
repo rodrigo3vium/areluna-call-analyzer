@@ -5,13 +5,13 @@ export default function CallsLoading() {
     <div className="space-y-4 p-6">
       <Skeleton className="h-7 w-36" />
 
-      <div className="flex gap-2 border-b border-slate-800 pb-0">
+      <div className="flex gap-2 border-b border-border pb-0">
         <Skeleton className="h-9 w-40" />
         <Skeleton className="h-9 w-36" />
       </div>
 
-      <div className="rounded-lg border border-slate-800">
-        <div className="divide-y divide-slate-800">
+      <div className="rounded-lg border border-border">
+        <div className="divide-y divide-border">
           {Array.from({ length: 6 }).map((_, i) => (
             <div key={i} className="flex items-center gap-4 p-4">
               <div className="flex-1 space-y-1.5">

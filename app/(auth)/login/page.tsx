@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useFormStatus } from "react-dom";
-import { Activity, Loader2 } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -37,17 +37,17 @@ export default function LoginPage() {
   }
 
   return (
-    <Card className="w-full max-w-sm">
-      <CardHeader className="pb-4">
-        <div className="flex items-center gap-2">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
-            <Activity className="h-4 w-4 text-primary-foreground" />
-          </div>
-          <span className="text-base font-semibold">Areluna Call Analyzer</span>
-        </div>
+    <Card className="w-full max-w-sm p-8">
+      <CardHeader className="items-center px-0 pb-6 text-center">
+        <span className="font-serif text-3xl font-light tracking-[0.28em] text-foreground">
+          ARELUNA
+        </span>
+        <span className="eyebrow mt-1 text-[10px] tracking-[0.18em] text-gold-500">
+          ATLAS · COMERCIAL OS
+        </span>
       </CardHeader>
 
-      <CardContent>
+      <CardContent className="px-0">
         {mode === "login" && (
           <form action={handleSignIn} className="space-y-4">
             <div className="space-y-1.5">

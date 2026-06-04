@@ -1,4 +1,5 @@
 import { createServiceClient } from "@/lib/supabase/server";
+import { PageHeader } from "@/components/ui/page-header";
 import { ConfigForm } from "./config-form";
 import { EmailTesteButton } from "./email-teste-button";
 
@@ -30,19 +31,20 @@ export default async function ConfiguracoesPage() {
 
   return (
     <div className="max-w-2xl space-y-6">
-      <div>
-        <h1 className="text-xl font-semibold text-slate-100">Configurações</h1>
-        <p className="text-sm text-slate-400">Parâmetros gerais, SharePoint e destinatários</p>
-      </div>
+      <PageHeader
+        eyebrow="Sistema"
+        title="Configurações"
+        subtitle="Parâmetros gerais, SharePoint e destinatários"
+      />
 
-      <section className="space-y-4 rounded-xl border border-slate-700 bg-slate-800/40 p-5">
-        <h2 className="text-sm font-medium text-slate-300">Parâmetros gerais</h2>
+      <section className="space-y-4 rounded-card border border-border bg-surface p-6 shadow-soft">
+        <h2 className="text-sm font-medium text-foreground">Parâmetros gerais</h2>
         <ConfigForm config={config!} />
       </section>
 
-      <section className="space-y-4 rounded-xl border border-slate-700 bg-slate-800/40 p-5">
-        <h2 className="text-sm font-medium text-slate-300">Integração SharePoint</h2>
-        <p className="text-xs text-slate-500">
+      <section className="space-y-4 rounded-card border border-border bg-surface p-6 shadow-soft">
+        <h2 className="text-sm font-medium text-foreground">Integração SharePoint</h2>
+        <p className="text-xs text-muted-foreground">
           Credenciais configuradas via variáveis de ambiente no Vercel. Para alterar, acesse o
           painel do Vercel → Settings → Environment Variables.
         </p>
@@ -56,12 +58,12 @@ export default async function ConfiguracoesPage() {
             { label: "Folder Item ID", valor: sharepoint.folderItemId },
           ].map(({ label, valor }) => (
             <div key={label} className="flex items-center justify-between gap-4">
-              <dt className="text-slate-500">{label}</dt>
+              <dt className="text-muted-foreground">{label}</dt>
               <dd
                 className={
                   valor && valor !== "não configurado"
-                    ? "font-mono text-slate-300"
-                    : "text-slate-600"
+                    ? "rounded bg-sand px-1.5 py-0.5 font-mono text-foreground"
+                    : "text-muted-foreground"
                 }
               >
                 {valor ?? "não configurado"}
@@ -69,17 +71,20 @@ export default async function ConfiguracoesPage() {
             </div>
           ))}
         </dl>
-        <p className="text-[10px] text-slate-600">
+        <p className="text-[10px] text-muted-foreground">
           Variáveis: SHAREPOINT_TENANT_ID · SHAREPOINT_CLIENT_ID · SHAREPOINT_CLIENT_SECRET ·
           SHAREPOINT_SITE_ID · SHAREPOINT_DRIVE_ID · SHAREPOINT_FOLDER_ITEM_ID
           <br />
-          IDs resolvidos via: <code>tsx scripts/resolve-sharepoint-ids.ts &lt;URL&gt;</code>
+          IDs resolvidos via:{" "}
+          <code className="rounded bg-sand px-1 py-0.5 text-foreground">
+            tsx scripts/resolve-sharepoint-ids.ts &lt;URL&gt;
+          </code>
         </p>
       </section>
 
-      <section className="space-y-3 rounded-xl border border-slate-700 bg-slate-800/40 p-5">
-        <h2 className="text-sm font-medium text-slate-300">Testes</h2>
-        <p className="text-xs text-slate-500">
+      <section className="space-y-3 rounded-card border border-border bg-surface p-6 shadow-soft">
+        <h2 className="text-sm font-medium text-foreground">Testes</h2>
+        <p className="text-xs text-muted-foreground">
           Envia um email de teste para todos os destinatários configurados.
         </p>
         <EmailTesteButton />

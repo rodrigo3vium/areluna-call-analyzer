@@ -18,10 +18,10 @@ export default function AppError({
 
   return (
     <div className="flex flex-1 flex-col items-center justify-center gap-4 p-8">
-      <AlertTriangle className="h-10 w-10 text-amber-500" />
+      <AlertTriangle className="h-10 w-10 text-warning" />
       <div className="text-center">
-        <p className="text-lg font-semibold text-slate-200">Algo deu errado</p>
-        <p className="mt-1 text-sm text-slate-400">
+        <p className="text-lg font-semibold text-foreground">Algo deu errado</p>
+        <p className="mt-1 text-sm text-muted-foreground">
           O erro foi registrado. Tente novamente ou recarregue a página.
         </p>
       </div>

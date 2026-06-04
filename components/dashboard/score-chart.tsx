@@ -33,17 +33,22 @@ export function ScoreChart({ dados }: Props) {
   return (
     <ResponsiveContainer width="100%" height={220}>
       <LineChart data={data} margin={{ top: 4, right: 16, left: -8, bottom: 0 }}>
-        <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
-        <XAxis dataKey="semana" tick={{ fontSize: 11, fill: "#94a3b8" }} />
-        <YAxis domain={[0, 100]} tick={{ fontSize: 11, fill: "#94a3b8" }} />
+        <CartesianGrid strokeDasharray="3 3" stroke="#E5DBCB" vertical={false} />
+        <XAxis dataKey="semana" tick={{ fontSize: 11, fill: "#6B5D52" }} />
+        <YAxis domain={[0, 100]} tick={{ fontSize: 11, fill: "#6B5D52" }} />
         <Tooltip
-          contentStyle={{ background: "#1e293b", border: "1px solid #334155", borderRadius: 8 }}
-          labelStyle={{ color: "#e2e8f0" }}
+          contentStyle={{
+            background: "#FFFFFF",
+            border: "1px solid #E5DBCB",
+            borderRadius: 12,
+            fontSize: 12,
+          }}
+          labelStyle={{ color: "#2E2620" }}
         />
         <Line
           type="monotone"
           dataKey="Calls"
-          stroke="#818cf8"
+          stroke="#C9A86B"
           strokeWidth={2}
           dot={false}
           connectNulls

@@ -11,8 +11,8 @@ export default function RondasLoading() {
         <Skeleton className="h-9 w-24" />
       </div>
 
-      <div className="rounded-lg border border-slate-800">
-        <div className="divide-y divide-slate-800">
+      <div className="rounded-card border border-border">
+        <div className="divide-y divide-border">
           {Array.from({ length: 6 }).map((_, i) => (
             <div key={i} className="flex items-center gap-4 p-4">
               <Skeleton className="h-4 w-48" />

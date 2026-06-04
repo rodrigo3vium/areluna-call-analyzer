@@ -16,14 +16,16 @@ export default function GlobalError({
 
   return (
     <html lang="pt-BR">
-      <body className="flex min-h-screen items-center justify-center bg-slate-950">
+      <body className="flex min-h-screen items-center justify-center bg-cream text-foreground">
         <div className="max-w-md text-center">
-          <p className="text-4xl font-bold text-slate-200">500</p>
-          <p className="mt-2 text-lg text-slate-400">Erro inesperado</p>
-          <p className="mt-1 text-sm text-slate-500">O problema foi registrado automaticamente.</p>
+          <p className="text-4xl font-bold text-foreground">500</p>
+          <p className="mt-2 text-lg text-muted-foreground">Erro inesperado</p>
+          <p className="mt-1 text-sm text-muted-foreground">
+            O problema foi registrado automaticamente.
+          </p>
           <button
             onClick={reset}
-            className="mt-6 rounded-md bg-cyan-600 px-4 py-2 text-sm font-medium text-white hover:bg-cyan-500"
+            className="mt-6 rounded-pill bg-gold-500 px-4 py-2 text-sm font-medium text-primary-900 hover:bg-gold-400"
           >
             Tentar novamente
           </button>

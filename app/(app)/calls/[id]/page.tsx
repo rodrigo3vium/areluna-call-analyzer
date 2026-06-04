@@ -6,12 +6,12 @@ import { cn } from "@/lib/utils";
 
 function classificacaoCor(cls: string | null) {
   const mapa: Record<string, string> = {
-    EXCELENTE: "bg-emerald-500/20 text-emerald-300",
-    BOM: "bg-cyan-500/20 text-cyan-300",
-    REGULAR: "bg-yellow-500/20 text-yellow-300",
-    INSUFICIENTE: "bg-red-500/20 text-red-300",
+    EXCELENTE: "bg-success/10 text-success",
+    BOM: "bg-info/10 text-info",
+    REGULAR: "bg-warning/10 text-warning",
+    INSUFICIENTE: "bg-error/10 text-error",
   };
-  return cls ? (mapa[cls] ?? "bg-slate-500/20 text-slate-300") : "bg-slate-500/20 text-slate-300";
+  return cls ? (mapa[cls] ?? "bg-sand text-muted-foreground") : "bg-sand text-muted-foreground";
 }
 
 export default async function CallDetalhe({ params }: { params: Promise<{ id: string }> }) {
@@ -35,25 +35,27 @@ export default async function CallDetalhe({ params }: { params: Promise<{ id: st
     <div className="space-y-4">
       {/* Banner de erro de processamento */}
       {call.transcricao_erro && (
-        <div className="rounded-lg border border-red-800/50 bg-red-950/30 px-4 py-3">
-          <p className="text-sm font-medium text-red-400">Erro no processamento</p>
-          <p className="mt-0.5 text-xs text-red-300/80">{call.transcricao_erro}</p>
+        <div className="rounded-lg border border-error/30 bg-error/10 px-4 py-3">
+          <p className="text-sm font-medium text-error">Erro no processamento</p>
+          <p className="mt-0.5 text-xs text-error/80">{call.transcricao_erro}</p>
         </div>
       )}
 
       {/* Header */}
       <div className="flex items-start justify-between">
         <div>
-          <Link href="/calls" className="text-sm text-slate-400 hover:text-slate-200">
+          <Link href="/calls" className="eyebrow text-muted-foreground hover:text-foreground">
             ← Calls
           </Link>
-          <h1 className="mt-1 text-xl font-semibold text-slate-100">{call.sharepoint_file_name}</h1>
-          <p className="text-sm text-slate-400">
+          <h1 className="mt-1 font-serif text-2xl font-semibold text-foreground">
+            {call.sharepoint_file_name}
+          </h1>
+          <p className="text-sm text-muted-foreground">
             {call.duracao_minutos ? `${call.duracao_minutos} min` : "Duração desconhecida"}
             {closer && (
               <>
                 {" · "}
-                <Link href={`/closers/${closer.id}`} className="text-cyan-400 hover:underline">
+                <Link href={`/closers/${closer.id}`} className="text-gold-500 hover:underline">
                   {closer.nome}
                 </Link>
               </>
@@ -79,28 +81,30 @@ export default async function CallDetalhe({ params }: { params: Promise<{ id: st
             <>
               {/* Performance por critério */}
               {Object.keys(performancePorCriterio).length > 0 && (
-                <div className="rounded-xl border border-slate-700 bg-slate-800/40 p-4">
+                <div className="rounded-card border border-border bg-surface p-6 shadow-soft">
                   <div className="mb-4 flex items-center justify-between">
-                    <h2 className="text-sm font-medium text-slate-300">Performance por critério</h2>
-                    <span className="text-2xl font-bold tabular-nums text-slate-100">
+                    <h2 className="text-sm font-medium text-foreground">
+                      Performance por critério
+                    </h2>
+                    <span className="text-2xl font-bold tabular-nums text-foreground">
                       {call.score}
-                      <span className="text-sm font-normal text-slate-500">/100</span>
+                      <span className="text-sm font-normal text-muted-foreground">/100</span>
                     </span>
                   </div>
                   <div className="space-y-3">
                     {Object.entries(performancePorCriterio).map(([criterio, score]) => (
                       <div key={criterio}>
                         <div className="mb-1 flex items-center justify-between text-xs">
-                          <span className="capitalize text-slate-400">
+                          <span className="capitalize text-muted-foreground">
                             {criterio.replace(/_/g, " ")}
                           </span>
                           <span
                             className={
                               score >= 70
-                                ? "text-emerald-400"
+                                ? "text-success"
                                 : score >= 40
-                                  ? "text-yellow-400"
-                                  : "text-red-400"
+                                  ? "text-warning"
+                                  : "text-error"
                             }
                           >
                             {score}
@@ -116,31 +120,31 @@ export default async function CallDetalhe({ params }: { params: Promise<{ id: st
               {/* Diagnóstico + ação */}
               <div className="grid gap-3 sm:grid-cols-2">
                 {call.diagnostico_ia && (
-                  <div className="rounded-xl border border-slate-700 bg-slate-800/40 p-4">
-                    <p className="mb-1 text-[10px] font-medium uppercase tracking-wide text-slate-500">
+                  <div className="rounded-card border border-border bg-surface p-6 shadow-soft">
+                    <p className="mb-1 text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
                       Diagnóstico
                     </p>
-                    <p className="text-sm text-slate-300">{call.diagnostico_ia}</p>
+                    <p className="text-sm text-foreground">{call.diagnostico_ia}</p>
                   </div>
                 )}
                 {call.acao_recomendada && (
-                  <div className="rounded-xl border border-cyan-900/50 bg-cyan-950/20 p-4">
-                    <p className="mb-1 text-[10px] font-medium uppercase tracking-wide text-cyan-600">
+                  <div className="rounded-card border border-border bg-gold-500/10 p-6 shadow-soft">
+                    <p className="mb-1 text-[10px] font-medium uppercase tracking-wide text-gold-500">
                       Ação recomendada
                     </p>
-                    <p className="text-sm text-slate-300">{call.acao_recomendada}</p>
+                    <p className="text-sm text-foreground">{call.acao_recomendada}</p>
                   </div>
                 )}
               </div>
 
               {/* Pontos de melhoria */}
               {pontosMelhoria.length > 0 && (
-                <div className="rounded-xl border border-slate-700 bg-slate-800/40 p-4">
-                  <h2 className="mb-3 text-sm font-medium text-slate-300">Pontos de melhoria</h2>
+                <div className="rounded-card border border-border bg-surface p-6 shadow-soft">
+                  <h2 className="mb-3 text-sm font-medium text-foreground">Pontos de melhoria</h2>
                   <ul className="space-y-1.5">
                     {pontosMelhoria.map((p, i) => (
-                      <li key={i} className="flex gap-2 text-sm text-slate-300">
-                        <span className="mt-0.5 shrink-0 text-amber-400">→</span>
+                      <li key={i} className="flex gap-2 text-sm text-foreground">
+                        <span className="mt-0.5 shrink-0 text-warning">→</span>
                         {p}
                       </li>
                     ))}
@@ -149,8 +153,8 @@ export default async function CallDetalhe({ params }: { params: Promise<{ id: st
               )}
             </>
           ) : (
-            <div className="rounded-xl border border-slate-700 bg-slate-800/40 p-8 text-center">
-              <p className="text-sm text-slate-500">
+            <div className="rounded-card border border-border bg-surface p-8 text-center shadow-soft">
+              <p className="text-sm text-muted-foreground">
                 {call.status_analise === "erro"
                   ? `Erro na análise${call.transcricao_erro ? `: ${call.transcricao_erro}` : ""}`
                   : "Análise em processamento…"}
@@ -160,12 +164,12 @@ export default async function CallDetalhe({ params }: { params: Promise<{ id: st
 
           {/* Transcrição */}
           {call.transcricao && (
-            <details className="rounded-xl border border-slate-700 bg-slate-800/40">
-              <summary className="cursor-pointer px-4 py-3 text-sm font-medium text-slate-300 hover:text-slate-200">
+            <details className="rounded-card border border-border bg-surface shadow-soft">
+              <summary className="cursor-pointer px-4 py-3 text-sm font-medium text-foreground hover:text-muted-foreground">
                 Transcrição completa
               </summary>
-              <div className="border-t border-slate-700 px-4 py-3">
-                <p className="whitespace-pre-wrap text-xs leading-relaxed text-slate-400">
+              <div className="border-t border-border px-4 py-3">
+                <p className="whitespace-pre-wrap text-xs leading-relaxed text-muted-foreground">
                   {call.transcricao}
                 </p>
               </div>
@@ -175,28 +179,28 @@ export default async function CallDetalhe({ params }: { params: Promise<{ id: st
 
         {/* Sidebar: detalhes */}
         <div className="space-y-4">
-          <div className="rounded-xl border border-slate-700 bg-slate-800/40 p-4">
-            <h2 className="mb-2 text-sm font-medium text-slate-300">Detalhes</h2>
+          <div className="rounded-card border border-border bg-surface p-6 shadow-soft">
+            <h2 className="mb-2 text-sm font-medium text-foreground">Detalhes</h2>
             <dl className="space-y-1.5 text-xs">
               {call.data_gravacao && (
                 <div className="flex justify-between">
-                  <dt className="text-slate-500">Data da gravação</dt>
-                  <dd className="text-slate-300">
+                  <dt className="text-muted-foreground">Data da gravação</dt>
+                  <dd className="text-foreground">
                     {new Intl.DateTimeFormat("pt-BR").format(new Date(call.data_gravacao))}
                   </dd>
                 </div>
               )}
               <div className="flex justify-between">
-                <dt className="text-slate-500">Closer</dt>
-                <dd className="text-slate-300">{closer?.nome ?? "—"}</dd>
+                <dt className="text-muted-foreground">Closer</dt>
+                <dd className="text-foreground">{closer?.nome ?? "—"}</dd>
               </div>
               <div className="flex justify-between">
-                <dt className="text-slate-500">Status</dt>
-                <dd className="text-slate-300">{call.status_analise}</dd>
+                <dt className="text-muted-foreground">Status</dt>
+                <dd className="text-foreground">{call.status_analise}</dd>
               </div>
               <div className="flex justify-between">
-                <dt className="text-slate-500">Transcrição</dt>
-                <dd className="text-slate-300">{call.transcricao_status}</dd>
+                <dt className="text-muted-foreground">Transcrição</dt>
+                <dd className="text-foreground">{call.transcricao_status}</dd>
               </div>
               {call.sharepoint_file_url && (
                 <div className="pt-1">
@@ -204,7 +208,7 @@ export default async function CallDetalhe({ params }: { params: Promise<{ id: st
                     href={call.sharepoint_file_url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-xs text-cyan-400 hover:underline"
+                    className="text-xs text-gold-500 hover:underline"
                   >
                     Ver no SharePoint →
                   </a>

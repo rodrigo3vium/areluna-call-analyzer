@@ -4,55 +4,60 @@
 
 @layer base {
   :root {
-    /* Background & surfaces */
-    --background: 220 20% 98%; /* #F8F9FB off-white levemente azulado */
-    --foreground: 222 47% 11%; /* slate-900 */
-
-    --card: 0 0% 100%;
-    --card-foreground: 222 47% 11%;
-
-    --popover: 0 0% 100%;
-    --popover-foreground: 222 47% 11%;
-
-    /* Brand — cyan-500 */
-    --primary: 199 89% 48%; /* #0EA5E9 */
-    --primary-foreground: 0 0% 100%;
-
-    --secondary: 210 40% 96%; /* slate-100 */
-    --secondary-foreground: 222 47% 11%;
-
-    --muted: 210 40% 96%;
-    --muted-foreground: 215 16% 47%; /* slate-500 */
-
-    --accent: 199 89% 95%; /* cyan-100 */
-    --accent-foreground: 199 89% 30%;
-
-    --destructive: 0 84% 60%; /* red-500 */
-    --destructive-foreground: 0 0% 100%;
-
-    --success: 160 84% 39%; /* emerald-500 */
-    --success-foreground: 0 0% 100%;
-
-    --warning: 38 92% 50%; /* amber-500 */
-    --warning-foreground: 222 47% 11%;
-
-    --border: 220 13% 91%; /* slate-200 */
-    --input: 220 13% 91%;
-    --ring: 199 89% 48%;
-
-    --radius: 0.5rem;
+    --ease-standard: cubic-bezier(0.4, 0, 0.2, 1);
   }
-}
 
-@layer base {
   * {
     @apply border-border;
   }
+
   body {
-    @apply bg-background font-sans text-foreground antialiased;
+    @apply bg-cream font-sans text-foreground antialiased;
     font-feature-settings:
       "rlig" 1,
       "calt" 1,
       "cv11" 1;
+  }
+
+  ::selection {
+    background: #ebd9b8; /* gold-200 */
+    color: #2e2620; /* primary-900 */
+  }
+}
+
+@layer components {
+  /* Tipografia editorial — Cormorant Garamond (serif) para displays */
+  .display-hero {
+    @apply font-serif font-light;
+    font-size: 72px;
+    line-height: 1.05;
+    letter-spacing: -0.01em;
+  }
+
+  .display-section {
+    @apply font-serif font-light;
+    font-size: 56px;
+    line-height: 1.08;
+    letter-spacing: -0.005em;
+  }
+
+  .display-card {
+    @apply font-serif font-medium;
+    font-size: 28px;
+    line-height: 1.2;
+  }
+
+  /* Labels / metadados — Inter uppercase */
+  .eyebrow {
+    @apply font-sans font-medium uppercase;
+    font-size: 13px;
+    letter-spacing: 0.12em;
+  }
+
+  .btn-primary,
+  .btn-secondary {
+    @apply font-sans font-medium;
+    font-size: 13px;
+    letter-spacing: 0.08em;
   }
 }

@@ -23,7 +23,9 @@ Este fork é o **Instituto Areluna do Porto** (implantodontia de alto ticket, Po
 | Erros | **`.throwOnError()`** obrigatório em toda query. Sem `if (error)` manual |
 | Queries complexas | Viram RPC (função Postgres). Não criar queries SQL inline longas no TS |
 | Tailwind | **v3.4**. Não migrar para v4 |
+| Design System | **Atlas Comercial** (warm editorial): browns + gold + creme/areia. Tokens hex em `tailwind.config.ts`. **Sem dark mode**. Fontes Cormorant Garamond (serif/displays) + Inter (UI). Doc: `docs/design-system-atlas.md`. Sem `next-themes` nem `vaul` |
 | Modelo IA | **`gpt-4o`** (OpenAI) para análise de calls. `response_format: json_object` obrigatório |
+| Transcrição | **AssemblyAI Universal-3** (`transcritor-cloud.ts`). Aceita URL de vídeo direto — sem ffmpeg, sem limite de 25MB |
 | Timestamps | **`timestamptz`** no banco. Nunca `timestamp without time zone` |
 | Telefone | **E.164** (`+5511...`). Normalizar via `lib/phone.ts` |
 | Migrations | Arquivos em `supabase/migrations/`. Nunca editar migration já aplicada — criar nova |
@@ -77,9 +79,8 @@ ronda-semanal (seg 09h)  → agrega as calls da semana num email; backfill-ronda
 ```
 
 - **Closers** (`comercial.closers`): cadastrados com `nome` = nome exato da pasta no SharePoint. O `resolver-closer.ts` faz match por `normalizarTexto(nome)`. Seed inicial: `scripts/seed-closers.ts`.
-- **Whisper** (`lib/modules/whisper.ts`): aceita até 25MB e não engole container de vídeo. Para qualquer `.mov`/`.mp4` (magic `ftyp`) ou arquivo grande, extrai áudio **mono 32kbps m4a** via `ffmpeg` antes de enviar (~104 min cabem em 25MB). Calls mais longas estouram o limite → precisam de chunking (follow-up).
-  - **⚠️ Produção (Vercel):** o `ffmpeg` é chamado via `execFile` (binário do sistema). O runtime serverless do Vercel **não tem ffmpeg por padrão** — precisa de layer/binário empacotado ou serviço externo de extração. Hoje só roda local.
-- **Análise IA** (`lib/prompts/analyze-call.ts`): Método Vitor, 7 blocos (A–G) + bônus, 8 sinais vermelhos, saída JSON. `PROMPT_VERSION` versiona o prompt. O modelo às vezes embrulha o JSON em ```` ```json ````; o `analisador-calls.ts` faz strip antes do `JSON.parse`.
+- **Transcrição** (`lib/modules/transcritor-cloud.ts`): usa AssemblyAI Universal-3. Recebe URL pré-assinada do SharePoint (`obterDownloadUrl`), AssemblyAI baixa o vídeo diretamente. Sem ffmpeg, sem limite de 25MB, funciona em Vercel serverless. `BATCH_SIZE=1` (AssemblyAI síncrono demora 30-90s por call — cabe no timeout do Vercel Pro). Custo: ~$0.37/hora de áudio.
+- **Análise IA** (`lib/prompts/analyze-call.ts`): Método Vitor, 7 blocos (A–G) + bônus, 8 sinais vermelhos, saída JSON. `PROMPT_VERSION` versiona o prompt. `response_format: json_object` garante JSON sem markdown wrapper.
 
 ---
 
@@ -146,7 +147,8 @@ Ver `.env.example` na raiz. Resumo das críticas:
 | `SHAREPOINT_SITE_ID` | Resolvido via `tsx scripts/resolve-sharepoint-ids.ts` |
 | `SHAREPOINT_DRIVE_ID` | Idem |
 | `SHAREPOINT_FOLDER_ITEM_ID` | Idem |
-| `OPENAI_API_KEY` | `lib/modules/whisper.ts` (transcrição) + `analisador-calls.ts` (GPT-4o) — somente server-side |
+| `OPENAI_API_KEY` | `lib/modules/analisador-calls.ts` (GPT-4o — análise Método Vitor) — somente server-side |
+| `ASSEMBLYAI_API_KEY` | `lib/modules/transcritor-cloud.ts` (transcrição de calls) — somente server-side |
 | `RESEND_API_KEY` | `lib/modules/enviador-resend.ts` (ronda semanal) — somente server-side |
 
 ---

@@ -1,17 +1,18 @@
 import Link from "next/link";
 import { createServiceClient } from "@/lib/supabase/server";
 import { Badge } from "@/components/ui/badge";
+import { PageHeader } from "@/components/ui/page-header";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
 
 function classificacaoCor(cls: string | null) {
   const mapa: Record<string, string> = {
-    EXCELENTE: "text-emerald-400",
-    BOM: "text-cyan-400",
-    REGULAR: "text-yellow-400",
-    INSUFICIENTE: "text-red-400",
+    EXCELENTE: "text-success",
+    BOM: "text-info",
+    REGULAR: "text-warning",
+    INSUFICIENTE: "text-error",
   };
-  return cls ? (mapa[cls] ?? "text-slate-400") : "text-slate-500";
+  return cls ? (mapa[cls] ?? "text-muted-foreground") : "text-muted-foreground";
 }
 
 function formatarData(iso: string | null) {
@@ -64,17 +65,18 @@ export default async function CallsPage() {
 
   return (
     <div className="space-y-4">
-      <div>
-        <h1 className="text-xl font-semibold text-slate-100">Calls</h1>
-        <p className="text-sm text-slate-400">Calls de fechamento com análise de performance</p>
-      </div>
+      <PageHeader
+        eyebrow="Calls"
+        title="Calls"
+        subtitle="Calls de fechamento com análise de performance"
+      />
 
       <Tabs defaultValue="em_processamento">
-        <TabsList className="bg-slate-800">
+        <TabsList>
           <TabsTrigger value="em_processamento">
             Em processamento
             {(emProcessamento?.length ?? 0) > 0 && (
-              <span className="ml-1.5 rounded-full bg-cyan-500/20 px-1.5 py-0.5 text-[10px] text-cyan-300">
+              <span className="ml-1.5 rounded-full bg-gold-200 px-1.5 py-0.5 text-[10px] text-primary-900">
                 {emProcessamento?.length}
               </span>
             )}
@@ -83,7 +85,7 @@ export default async function CallsPage() {
           <TabsTrigger value="com_erro">
             Com erro
             {(comErro?.length ?? 0) > 0 && (
-              <span className="ml-1.5 rounded-full bg-red-500/20 px-1.5 py-0.5 text-[10px] text-red-300">
+              <span className="ml-1.5 rounded-full bg-error/10 px-1.5 py-0.5 text-[10px] text-error">
                 {comErro?.length}
               </span>
             )}
@@ -92,39 +94,41 @@ export default async function CallsPage() {
 
         <TabsContent value="em_processamento" className="mt-4">
           {(emProcessamento ?? []).length === 0 ? (
-            <div className="rounded-xl border border-slate-700 bg-slate-800/40 p-8 text-center">
-              <p className="text-sm text-slate-500">Nenhuma call em processamento</p>
+            <div className="rounded-card border border-border bg-surface p-8 text-center shadow-soft">
+              <p className="text-sm text-muted-foreground">Nenhuma call em processamento</p>
             </div>
           ) : (
-            <div className="overflow-hidden rounded-xl border border-slate-700">
+            <div className="overflow-hidden rounded-xl border border-border">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="border-b border-slate-700 bg-slate-800/60">
-                    <th className="px-4 py-3 text-left text-xs font-medium text-slate-400">
+                  <tr className="border-b border-border bg-surface">
+                    <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground">
                       Arquivo
                     </th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-slate-400">
+                    <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground">
                       Closer
                     </th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-slate-400">
+                    <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground">
                       Status
                     </th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-700/60">
+                <tbody className="divide-y divide-border">
                   {(emProcessamento ?? []).map((c) => {
                     const closer = Array.isArray(c.closer) ? c.closer[0] : c.closer;
                     return (
-                      <tr key={c.id} className="hover:bg-slate-800/40">
+                      <tr key={c.id} className="hover:bg-sand">
                         <td className="px-4 py-3">
                           <Link
                             href={`/calls/${c.id}`}
-                            className="font-medium text-slate-200 hover:text-cyan-300"
+                            className="font-medium text-foreground hover:text-gold-500 hover:underline"
                           >
                             {c.sharepoint_file_name}
                           </Link>
                         </td>
-                        <td className="px-4 py-3 text-xs text-slate-400">{closer?.nome ?? "—"}</td>
+                        <td className="px-4 py-3 text-xs text-muted-foreground">
+                          {closer?.nome ?? "—"}
+                        </td>
                         <td className="px-4 py-3">
                           <Badge variant="secondary">
                             {STATUS_ANALISE_LABEL[c.status_analise] ?? c.status_analise}
@@ -140,25 +144,31 @@ export default async function CallsPage() {
         </TabsContent>
 
         <TabsContent value="analisadas" className="mt-4">
-          <div className="overflow-hidden rounded-xl border border-slate-700">
+          <div className="overflow-hidden rounded-xl border border-border">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-slate-700 bg-slate-800/60">
-                  <th className="px-4 py-3 text-left text-xs font-medium text-slate-400">
+                <tr className="border-b border-border bg-surface">
+                  <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground">
                     Arquivo
                   </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-slate-400">Closer</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-slate-400">Data</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-slate-400">
+                  <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground">
+                    Closer
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground">
+                    Data
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground">
                     Classificação
                   </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-slate-400">Score</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground">
+                    Score
+                  </th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-700/60">
+              <tbody className="divide-y divide-border">
                 {(analisadas ?? []).length === 0 ? (
                   <tr>
-                    <td colSpan={5} className="px-4 py-8 text-center text-sm text-slate-500">
+                    <td colSpan={5} className="px-4 py-8 text-center text-sm text-muted-foreground">
                       Nenhuma call analisada
                     </td>
                   </tr>
@@ -166,17 +176,19 @@ export default async function CallsPage() {
                   (analisadas ?? []).map((c) => {
                     const closer = Array.isArray(c.closer) ? c.closer[0] : c.closer;
                     return (
-                      <tr key={c.id} className="hover:bg-slate-800/40">
+                      <tr key={c.id} className="hover:bg-sand">
                         <td className="px-4 py-3">
                           <Link
                             href={`/calls/${c.id}`}
-                            className="font-medium text-slate-200 hover:text-cyan-300"
+                            className="font-medium text-foreground hover:text-gold-500 hover:underline"
                           >
                             {c.sharepoint_file_name}
                           </Link>
                         </td>
-                        <td className="px-4 py-3 text-xs text-slate-400">{closer?.nome ?? "—"}</td>
-                        <td className="px-4 py-3 text-xs text-slate-400">
+                        <td className="px-4 py-3 text-xs text-muted-foreground">
+                          {closer?.nome ?? "—"}
+                        </td>
+                        <td className="px-4 py-3 text-xs text-muted-foreground">
                           {formatarData(c.data_gravacao)}
                         </td>
                         <td className="px-4 py-3">
@@ -186,7 +198,7 @@ export default async function CallsPage() {
                             {c.classificacao ?? "—"}
                           </span>
                         </td>
-                        <td className="px-4 py-3 text-sm font-semibold tabular-nums text-slate-300">
+                        <td className="px-4 py-3 text-sm font-semibold tabular-nums text-foreground">
                           {c.score ?? "—"}
                         </td>
                       </tr>
@@ -200,25 +212,29 @@ export default async function CallsPage() {
 
         <TabsContent value="com_erro" className="mt-4">
           {(comErro ?? []).length === 0 ? (
-            <div className="rounded-xl border border-slate-700 bg-slate-800/40 p-8 text-center">
-              <p className="text-sm text-slate-500">Nenhuma call com erro</p>
+            <div className="rounded-card border border-border bg-surface p-8 text-center shadow-soft">
+              <p className="text-sm text-muted-foreground">Nenhuma call com erro</p>
             </div>
           ) : (
-            <div className="overflow-hidden rounded-xl border border-slate-700">
+            <div className="overflow-hidden rounded-xl border border-border">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="border-b border-slate-700 bg-slate-800/60">
-                    <th className="px-4 py-3 text-left text-xs font-medium text-slate-400">
+                  <tr className="border-b border-border bg-surface">
+                    <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground">
                       Arquivo
                     </th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-slate-400">
+                    <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground">
                       Closer
                     </th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-slate-400">Erro</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-slate-400">Data</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground">
+                      Erro
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground">
+                      Data
+                    </th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-700/60">
+                <tbody className="divide-y divide-border">
                   {(comErro ?? []).map((c) => {
                     const closer = Array.isArray(c.closer) ? c.closer[0] : c.closer;
                     const erroTruncado = c.transcricao_erro
@@ -226,23 +242,25 @@ export default async function CallsPage() {
                         (c.transcricao_erro.length > 80 ? "…" : "")
                       : "Erro desconhecido";
                     return (
-                      <tr key={c.id} className="hover:bg-slate-800/40">
+                      <tr key={c.id} className="hover:bg-sand">
                         <td className="px-4 py-3">
                           <Link
                             href={`/calls/${c.id}`}
-                            className="font-medium text-slate-200 hover:text-cyan-300"
+                            className="font-medium text-foreground hover:text-gold-500 hover:underline"
                           >
                             {c.sharepoint_file_name}
                           </Link>
                         </td>
-                        <td className="px-4 py-3 text-xs text-slate-400">{closer?.nome ?? "—"}</td>
+                        <td className="px-4 py-3 text-xs text-muted-foreground">
+                          {closer?.nome ?? "—"}
+                        </td>
                         <td
-                          className="max-w-[280px] px-4 py-3 text-xs text-red-400"
+                          className="max-w-[280px] px-4 py-3 text-xs text-error"
                           title={c.transcricao_erro ?? undefined}
                         >
                           {erroTruncado}
                         </td>
-                        <td className="px-4 py-3 text-xs text-slate-400">
+                        <td className="px-4 py-3 text-xs text-muted-foreground">
                           {formatarData(c.data_gravacao)}
                         </td>
                       </tr>

@@ -51,13 +51,13 @@ export function ConfigForm({ config }: { config: Configuracoes }) {
   function field(key: keyof typeof form, label: string, hint?: string) {
     return (
       <div className="space-y-1.5">
-        <Label className="text-xs text-slate-400">{label}</Label>
+        <Label className="text-xs text-muted-foreground">{label}</Label>
         <Input
           value={form[key]}
           onChange={(e) => setForm((p) => ({ ...p, [key]: e.target.value }))}
-          className="h-8 border-slate-700 bg-slate-900 text-xs"
+          className="h-8 border-border bg-surface text-xs"
         />
-        {hint && <p className="text-[10px] text-slate-600">{hint}</p>}
+        {hint && <p className="text-[10px] text-muted-foreground">{hint}</p>}
       </div>
     );
   }
@@ -76,7 +76,7 @@ export function ConfigForm({ config }: { config: Configuracoes }) {
         <Button type="submit" size="sm" className="h-8 text-xs" disabled={loading}>
           {loading ? "Salvando…" : "Salvar configurações"}
         </Button>
-        {ok && <span className="text-xs text-emerald-400">Salvo ✓</span>}
+        {ok && <span className="text-xs text-success">Salvo ✓</span>}
       </div>
     </form>
   );

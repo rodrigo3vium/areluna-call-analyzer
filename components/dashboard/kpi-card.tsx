@@ -13,19 +13,19 @@ export function KpiCard({ titulo, valor, delta, sufixo, destaque }: Props) {
   const valorFormatado = valor == null ? "—" : `${valor}${sufixo ?? ""}`;
 
   return (
-    <Card className={cn(destaque && "border-cyan-500/40 bg-cyan-950/20")}>
-      <CardHeader className="pb-1">
-        <CardTitle className="text-sm font-medium text-slate-400">{titulo}</CardTitle>
+    <Card
+      className={cn(
+        "p-7",
+        destaque && "border-gold-400 bg-gradient-to-br from-gold-500/10 to-transparent",
+      )}
+    >
+      <CardHeader className="p-0 pb-2">
+        <CardTitle className="eyebrow font-sans text-muted-foreground">{titulo}</CardTitle>
       </CardHeader>
-      <CardContent>
-        <p className="text-3xl font-bold tabular-nums text-slate-100">{valorFormatado}</p>
+      <CardContent className="p-0">
+        <p className="display-card tabular-nums text-foreground">{valorFormatado}</p>
         {delta != null && (
-          <p
-            className={cn(
-              "mt-1 text-xs font-medium",
-              delta >= 0 ? "text-emerald-400" : "text-red-400",
-            )}
-          >
+          <p className={cn("mt-1 text-xs font-medium", delta >= 0 ? "text-success" : "text-error")}>
             {delta >= 0 ? "+" : ""}
             {delta} vs período anterior
           </p>

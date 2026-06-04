@@ -33,7 +33,7 @@ export function EmailTesteButton() {
         {loading ? "Enviando…" : "Enviar email de teste"}
       </Button>
       {resultado && (
-        <span className={`text-xs ${resultado.ok ? "text-emerald-400" : "text-red-400"}`}>
+        <span className={`text-xs ${resultado.ok ? "text-success" : "text-error"}`}>
           {resultado.msg}
         </span>
       )}

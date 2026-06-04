@@ -1,6 +1,7 @@
 import { createServiceClient } from "@/lib/supabase/server";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
+import { PageHeader } from "@/components/ui/page-header";
 
 export default async function ClosersPage() {
   const supabase = await createServiceClient();
@@ -13,48 +14,47 @@ export default async function ClosersPage() {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-xl font-semibold text-slate-100">Closers</h1>
-          <p className="text-sm text-slate-400">Time de fechamento cadastrado</p>
-        </div>
-      </div>
+      <PageHeader eyebrow="Closers" title="Closers" subtitle="Time de fechamento cadastrado" />
 
-      <div className="overflow-hidden rounded-xl border border-slate-700">
+      <div className="overflow-hidden rounded-card border border-border bg-surface shadow-soft">
         <table className="w-full text-sm">
           <thead>
-            <tr className="border-b border-slate-700 bg-slate-800/60">
-              <th className="px-4 py-3 text-left text-xs font-medium text-slate-400">Nome</th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-slate-400">Email</th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-slate-400">Status</th>
+            <tr className="border-b border-border bg-sand">
+              <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground">
+                Nome
+              </th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground">
+                Email
+              </th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground">
+                Status
+              </th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-700/60">
+          <tbody className="divide-y divide-border">
             {(closers ?? []).length === 0 ? (
               <tr>
-                <td colSpan={3} className="px-4 py-8 text-center text-sm text-slate-500">
+                <td colSpan={3} className="px-4 py-8 text-center text-sm text-muted-foreground">
                   Nenhum closer cadastrado ainda
                 </td>
               </tr>
             ) : (
               (closers ?? []).map((c) => (
-                <tr key={c.id} className="hover:bg-slate-800/40">
+                <tr key={c.id} className="hover:bg-sand">
                   <td className="px-4 py-3">
                     <Link
                       href={`/closers/${c.id}`}
-                      className="font-medium text-slate-200 hover:text-cyan-300"
+                      className="font-medium text-gold-500 hover:underline"
                     >
                       {c.nome}
                     </Link>
                   </td>
-                  <td className="px-4 py-3 text-xs text-slate-400">{c.email ?? "—"}</td>
+                  <td className="px-4 py-3 text-xs text-muted-foreground">{c.email ?? "—"}</td>
                   <td className="px-4 py-3">
                     <span
                       className={cn(
                         "rounded-full px-2 py-0.5 text-[10px] font-medium",
-                        c.ativo
-                          ? "bg-emerald-500/20 text-emerald-300"
-                          : "bg-slate-500/20 text-slate-400",
+                        c.ativo ? "bg-success/10 text-success" : "bg-sand text-muted-foreground",
                       )}
                     >
                       {c.ativo ? "Ativo" : "Inativo"}

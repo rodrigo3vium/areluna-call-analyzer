@@ -6,12 +6,29 @@ const Card = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElemen
   ({ className, ...props }, ref) => (
     <div
       ref={ref}
-      className={cn("rounded-lg border bg-card text-card-foreground shadow-sm", className)}
+      className={cn(
+        "rounded-card border border-border bg-surface text-card-foreground shadow-soft transition-shadow duration-300 ease-standard",
+        className,
+      )}
       {...props}
     />
   ),
 );
 Card.displayName = "Card";
+
+const CardSand = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(
+  ({ className, ...props }, ref) => (
+    <div
+      ref={ref}
+      className={cn(
+        "rounded-card border border-border bg-sand text-card-foreground shadow-soft transition-shadow duration-300 ease-standard",
+        className,
+      )}
+      {...props}
+    />
+  ),
+);
+CardSand.displayName = "CardSand";
 
 const CardHeader = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(
   ({ className, ...props }, ref) => (
@@ -24,7 +41,7 @@ const CardTitle = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivE
   ({ className, ...props }, ref) => (
     <div
       ref={ref}
-      className={cn("text-2xl font-semibold leading-none tracking-tight", className)}
+      className={cn("font-serif text-2xl font-medium leading-none tracking-tight", className)}
       {...props}
     />
   ),
@@ -52,4 +69,4 @@ const CardFooter = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDiv
 );
 CardFooter.displayName = "CardFooter";
 
-export { Card, CardHeader, CardFooter, CardTitle, CardDescription, CardContent };
+export { Card, CardSand, CardHeader, CardFooter, CardTitle, CardDescription, CardContent };

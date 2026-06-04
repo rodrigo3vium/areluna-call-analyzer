@@ -8,7 +8,7 @@ export default function DashboardLoading() {
       {/* KPI cards */}
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         {Array.from({ length: 4 }).map((_, i) => (
-          <div key={i} className="rounded-lg border border-slate-800 bg-slate-900 p-4">
+          <div key={i} className="rounded-card border border-border bg-surface p-6 shadow-soft">
             <Skeleton className="h-4 w-24" />
             <Skeleton className="mt-3 h-8 w-16" />
             <Skeleton className="mt-2 h-3 w-20" />
@@ -17,7 +17,7 @@ export default function DashboardLoading() {
       </div>
 
       {/* Chart */}
-      <div className="rounded-lg border border-slate-800 bg-slate-900 p-4">
+      <div className="rounded-card border border-border bg-surface p-6 shadow-soft">
         <Skeleton className="h-4 w-40" />
         <Skeleton className="mt-4 h-40 w-full" />
       </div>
@@ -25,7 +25,7 @@ export default function DashboardLoading() {
       {/* Bottom lists */}
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         {Array.from({ length: 2 }).map((_, i) => (
-          <div key={i} className="rounded-lg border border-slate-800 bg-slate-900 p-4">
+          <div key={i} className="rounded-card border border-border bg-surface p-6 shadow-soft">
             <Skeleton className="h-4 w-32" />
             <div className="mt-4 space-y-3">
               {Array.from({ length: 4 }).map((_, j) => (
