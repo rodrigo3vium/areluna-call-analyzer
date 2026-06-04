@@ -1,10 +1,10 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { baixarArquivo } from "@/lib/modules/sharepoint-client";
-import { transcreverAudio } from "@/lib/modules/whisper";
+import { obterDownloadUrl } from "@/lib/modules/sharepoint-client";
+import { transcreverDeURL } from "@/lib/modules/transcritor-cloud";
 import { log } from "@/lib/log";
 
-// 3 calls por execução: ~10s Whisper cada = ~30s máximo, seguro no timeout de 60s do Vercel Pro
-const BATCH_SIZE = 3;
+// AssemblyAI síncrono demora 30-90s por call — 1 por execução cabe no timeout do Vercel Pro
+const BATCH_SIZE = 1;
 
 export type TranscricaoResult = {
   processadas: number;
@@ -46,8 +46,15 @@ export async function processarTranscricoesPendentes(
     }
 
     try {
-      const { buffer, mimeType, fileName } = await baixarArquivo(call.sharepoint_file_id as string);
-      const transcricao = await transcreverAudio(buffer, fileName, mimeType);
+      const downloadUrl = await obterDownloadUrl(call.sharepoint_file_id as string);
+      const resultado = await transcreverDeURL(downloadUrl);
+      const transcricao = resultado.texto;
+
+      log.info("transcritor_calls.transcrito", {
+        callId: call.id,
+        duracaoSegundos: resultado.duracaoSegundos,
+        custoEstimadoUSD: resultado.custoEstimadoUSD.toFixed(4),
+      });
 
       // UPDATE atômico: transcricao + concluida + aguardando_analise no mesmo statement
       await supabase

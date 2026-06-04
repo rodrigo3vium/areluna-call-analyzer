@@ -88,6 +88,28 @@ export async function listarArquivosDaPasta(): Promise<SharePointFile[]> {
   return arquivos;
 }
 
+/**
+ * Obtém a downloadUrl pré-assinada do SharePoint sem baixar o arquivo.
+ * Útil para passar a URL para serviços externos (AssemblyAI) que baixam por conta própria.
+ * A URL é válida por ~1h — use imediatamente.
+ */
+export async function obterDownloadUrl(itemId: string): Promise<string> {
+  const client = getGraphClient();
+  const driveId = process.env.SHAREPOINT_DRIVE_ID!;
+
+  const metadata = await client
+    .api(`/drives/${driveId}/items/${itemId}`)
+    .select("@microsoft.graph.downloadUrl")
+    .get();
+
+  const downloadUrl = metadata["@microsoft.graph.downloadUrl"] as string | undefined;
+  if (!downloadUrl) {
+    throw new Error(`downloadUrl ausente para o item SharePoint ${itemId}`);
+  }
+
+  return downloadUrl;
+}
+
 export async function baixarArquivo(
   itemId: string,
 ): Promise<{ buffer: Buffer; mimeType: string; fileName: string }> {

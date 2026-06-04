@@ -26,8 +26,7 @@ O gestor não precisa fazer nada — as calls aparecem analisadas no painel em a
 | UI | Tailwind v3.4 + shadcn/ui + Recharts |
 | Banco | Supabase (PostgreSQL, schema `comercial`) |
 | IA — análise | GPT-4o (`response_format: json_object`) |
-| IA — transcrição | OpenAI Whisper (`whisper-1`) |
-| Áudio | ffmpeg — extração mono 32kbps de containers .mov/.mp4 |
+| IA — transcrição | AssemblyAI Universal-3 (aceita vídeo direto via URL) |
 | Fonte de dados | Microsoft SharePoint via Microsoft Graph API |
 | Email | Resend |
 | Deploy | Vercel Pro |
@@ -37,10 +36,7 @@ O gestor não precisa fazer nada — as calls aparecem analisadas no painel em a
 ## Pré-requisitos
 
 - Node.js ≥ 20
-- `ffmpeg` instalado no sistema (`brew install ffmpeg` no Mac)
-- Contas: Supabase, Vercel, OpenAI, Resend, Microsoft Azure (App Registration)
-
-> **Atenção — produção:** o `ffmpeg` é chamado via `execFile` (binário do sistema). O runtime serverless do Vercel **não inclui ffmpeg por padrão**. A transcrição hoje funciona local; produção requer solução de ffmpeg (binário empacotado, layer ou serviço externo).
+- Contas: Supabase, Vercel, OpenAI, AssemblyAI, Resend, Microsoft Azure (App Registration)
 
 ---
 
@@ -66,7 +62,8 @@ cp .env.example .env.local
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Chave anon (frontend) |
 | `SUPABASE_SERVICE_ROLE_KEY` | Chave service role — **nunca expor ao cliente** |
 | `NEXT_PUBLIC_APP_URL` | URL pública do app |
-| `OPENAI_API_KEY` | Whisper (transcrição) + GPT-4o (análise) |
+| `OPENAI_API_KEY` | GPT-4o (análise de calls com Método Vitor) |
+| `ASSEMBLYAI_API_KEY` | Transcrição de calls (AssemblyAI Universal-3) |
 | `RESEND_API_KEY` | Envio da ronda semanal |
 | `CRON_SECRET` | Bearer token para proteger rotas `/api/cron/*` |
 | `SHAREPOINT_TENANT_ID` | Tenant ID do Azure |
@@ -179,8 +176,8 @@ curl -H "Authorization: Bearer $CRON_SECRET" http://localhost:3000/api/cron/sync
 |---|---|
 | `sharepoint-client` | Autenticação Graph API, listagem da pasta, download de arquivos |
 | `sync-sharepoint` | Compara SharePoint vs banco, cria calls novas (dedup por `sharepoint_file_id`) |
-| `whisper` | Download → extração ffmpeg (mono 32k) → transcrição Whisper |
-| `transcritor-calls` | Orquestra transcrição com lock otimista (evita race condition) |
+| `transcritor-cloud` | Transcrição via AssemblyAI Universal-3 — recebe URL, retorna texto + duração + custo |
+| `transcritor-calls` | Orquestra transcrição (obtém URL do SharePoint → AssemblyAI) com lock otimista |
 | `parser-nome-arquivo` | Parseia padrão `YYYY-MM-DD_Closer_Cliente.ext` (alternativo ao modelo de pastas) |
 | `resolver-closer` | Match `normalizarTexto(nomePasta)` → `closer_id` no banco |
 | `analisador-calls` | Chama GPT-4o com Método Vitor, salva score + diagnóstico + sinais vermelhos |
@@ -268,19 +265,16 @@ npx tsx scripts/resolve-sharepoint-ids.ts  # Resolver IDs SharePoint
 
 | Serviço | Volume típico | Estimativa/mês |
 |---|---|---|
-| OpenAI Whisper | ~40 calls × 45min | ~US$ 10 |
+| AssemblyAI Universal-3 | ~40 calls × 45min | ~US$ 11 |
 | GPT-4o (análise calls) | ~40 calls × 6k tokens | ~US$ 10 |
 | GPT-4o (rondas) | 4 por mês | ~US$ 2 |
-| **Total** | | **~US$ 20–25/mês** |
+| **Total** | | **~US$ 23/mês** |
 
-Vai na conta OpenAI do cliente.
+Vai na conta do cliente (OpenAI + AssemblyAI).
 
 ---
 
 ## Fora de Escopo (v1)
-
-- ffmpeg no Vercel serverless (transcrição só funciona local hoje)
-- Chunking de áudio para calls > ~104 min
 - LGPD compliance completo
 - 2FA, dark mode, exportação CSV
 - Multi-tenancy / SaaS

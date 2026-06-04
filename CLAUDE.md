@@ -71,7 +71,8 @@ Quatro crons encadeados por status na tabela `comercial.calls`:
 sync-sharepoint (*/15)   → lista a pasta SharePoint, cria 1 call por arquivo novo.
                            Closer = nome da pasta, resolvido via resolver-closer.ts.
                            status: transcricao_status='pendente'
-transcrever-calls (*/5)  → baixa o arquivo, extrai áudio (Whisper + ffmpeg), transcreve.
+transcrever-calls (*/5)  → obtém URL pré-assinada do SharePoint (obterDownloadUrl),
+                           envia pro AssemblyAI Universal-3, salva transcrição.
                            status: 'concluida' → status_analise='aguardando_analise'
 analise-calls (*/5)      → roda o Método Vitor (analyze-call.ts), grava score/diagnóstico.
                            status_analise: 'analisada'
@@ -94,7 +95,7 @@ app/
     cron/         # 5 crons: sync-sharepoint, transcrever-calls, analise-calls,
                   #          ronda-semanal, backfill-rondas (protegidos por CRON_SECRET)
 lib/
-  modules/        # Lógica de negócio: sharepoint-client, whisper, parser-nome-arquivo,
+  modules/        # Lógica de negócio: sharepoint-client, transcritor-cloud, parser-nome-arquivo,
                   #   resolver-closer, sync-sharepoint, transcritor-calls, analisador-calls,
                   #   gerador-ronda, email-renderer-ronda, enviador-resend
   prompts/        # System prompt Claude (analyze-call — Método Vitor)
@@ -150,6 +151,12 @@ Ver `.env.example` na raiz. Resumo das críticas:
 | `OPENAI_API_KEY` | `lib/modules/analisador-calls.ts` (GPT-4o — análise Método Vitor) — somente server-side |
 | `ASSEMBLYAI_API_KEY` | `lib/modules/transcritor-cloud.ts` (transcrição de calls) — somente server-side |
 | `RESEND_API_KEY` | `lib/modules/enviador-resend.ts` (ronda semanal) — somente server-side |
+
+---
+
+## Aprendizados de Processo
+
+- **DDL não passa via service_role REST** — `ALTER TABLE` e qualquer DDL retornam `PGRST202/PGRST205`. Migrations que adicionam colunas precisam do Supabase Dashboard → SQL Editor (ou pg connection direta). Nunca prometer aplicar migration automaticamente — é ação manual do usuário.
 
 ---
 
